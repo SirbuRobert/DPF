@@ -1,6 +1,9 @@
+# DPF/main/models.py
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings # Necesar pentru a lega la AUTH_USER_MODEL
+from django.core.validators import FileExtensionValidator # IMPORTUL NECESAR PENTRU PDF
 
 # --- 1. Modelul User Customizat ---
 
@@ -93,7 +96,7 @@ class ProfesorProfile(models.Model):
         related_name='profesor_profile' # Ne va ajuta să accesăm (user.profesor_profile)
     )
     
-    # ❗ MODIFICAREA: Legătură către modelul Materie
+    # Legătură către modelul Materie
     materie_predata = models.ForeignKey(
         'Materie', # Folosim string pt a evita erori de import circular
         on_delete=models.SET_NULL, # Dacă ștergem materia, profesorul rămâne
@@ -105,7 +108,7 @@ class ProfesorProfile(models.Model):
     def __str__(self):
         return f"Profesor: {self.user.username} - {self.materie_predata or 'N/A'}"
 
-# --- 3. Modelele pentru Materii și Materiale ---
+# --- 3. Modelele pentru Materii, Lecții și Materiale ---
 
 class Materie(models.Model):
     """
@@ -122,14 +125,15 @@ class Materie(models.Model):
     def __str__(self):
         return self.nume
 
-
-class MaterialDidactic(models.Model):
+# --- MODEL NOU: LECTIE ---
+class Lectie(models.Model):
     """
-    Materialul propriu-zis (lecție, fișier, video link etc.)
-    Acesta este modelul central care leagă totul.
+    Modelul pentru o lecție specifică (capitol).
+    Leagă o Materie de un An de Studiu și un titlu.
+    Ex: Istorie, Clasa a 9-a, "Primul Război Mondial"
     """
     
-    # --- Alegerile pentru Anul de Studiu (copiate de la ElevProfile) ---
+    # Alegerile pentru Anul de Studiu
     class AnStudiu(models.IntegerChoices):
         CLASA_9 = 9, 'Clasa a 9-a'
         CLASA_10 = 10, 'Clasa a 10-a'
@@ -140,12 +144,44 @@ class MaterialDidactic(models.Model):
     materie = models.ForeignKey(
         Materie, 
         on_delete=models.CASCADE, 
-        related_name="materiale"
+        related_name="lectii" # O materie are mai multe lecții
     )
     
     an_studiu = models.IntegerField(
         choices=AnStudiu.choices,
         verbose_name="An de studiu"
+    )
+    
+    # --- Conținutul Efectiv ---
+    titlu = models.CharField(max_length=255, verbose_name="Titlu Lecție")
+    descriere_scurta = models.TextField(blank=True, verbose_name="Sumar Lecție")
+    
+    data_crearii = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['materie', 'an_studiu', 'titlu']
+        verbose_name = "Lecție"
+        verbose_name_plural = "Lecții"
+        # Ne asigurăm că nu există 2 lecții cu același nume la aceeași materie/an
+        unique_together = ['materie', 'an_studiu', 'titlu']
+
+    def __str__(self):
+        # Va afișa: "Istorie (Clasa a 9-a) - Primul Război Mondial"
+        return f"{self.materie.nume} ({self.get_an_studiu_display()}) - {self.titlu}"
+
+
+# --- MODEL MODIFICAT: MATERIAL DIDACTIC ---
+class MaterialDidactic(models.Model):
+    """
+    Materialul propriu-zis (PDF, link etc.)
+    Acum, acesta este legat de o LECȚIE.
+    """
+    
+    # --- Legăturile MODIFICATE ---
+    lectie = models.ForeignKey(
+        Lectie,
+        on_delete=models.CASCADE,
+        related_name="materiale" # O lecție are mai multe materiale
     )
     
     autor = models.ForeignKey(
@@ -157,23 +193,24 @@ class MaterialDidactic(models.Model):
     )
 
     # --- Conținutul Efectiv ---
-    titlu = models.CharField(max_length=255, verbose_name="Titlu")
+    titlu = models.CharField(max_length=255, verbose_name="Titlu Material")
     descriere = models.TextField(blank=True, verbose_name="Descriere / Conținut text")
     
-    # Pentru upload de fișiere (Necesită MEDIA_ROOT și MEDIA_URL în settings.py)
     fisier = models.FileField(
         upload_to='materiale_didactice/%Y/%m/', 
         blank=True, 
         null=True,
-        verbose_name="Fișier atașat"
+        verbose_name="Fișier atașat (doar PDF)",
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])] # <-- Validatorul e aici!
     )
     
     data_adaugarii = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['materie', 'an_studiu', 'titlu']
+        ordering = ['lectie', 'titlu']
         verbose_name = "Material Didactic"
         verbose_name_plural = "Materiale Didactice"
 
     def __str__(self):
-        return f"{self.materie.nume} ({self.get_an_studiu_display()}) - {self.titlu}"
+        # Va afișa: "Primul Război Mondial - Rezumat.pdf"
+        return f"{self.lectie.titlu} - {self.titlu}"

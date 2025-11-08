@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Importă Elevi din CSV</h2>
+    <p>Această pagină permite adăugarea în masă a conturilor de elevi.</p>
+    <p>Utilizatorul tău trebuie să aibă drepturi de 'staff' pentru a accesa această funcție.</p>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-md-6">
+            <form method="POST" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                
+                {{ form.as_p }}
+
+                <button type="submit" class="btn btn-primary mt-3">Importă Conturi</button>
+            </form>
+        </div>
+        
+        <div class="col-md-6">
+            {% if parole_generate %}
+                <h3>Import reușit!</h3>
+                <p>Salvează aceste date și distribuie-le elevilor în siguranță. Acestea sunt singura dată când parolele sunt afișate.</p>
+                
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Elev</th>
+                            <th>Username</th>
+                            <th>Parolă Temporară</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for username, password, nume in parole_generate %}
+                        <tr>
+                            <td>{{ nume }}</td>
+                            <td>{{ username }}</td>
+                            <td><strong>{{ password }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
