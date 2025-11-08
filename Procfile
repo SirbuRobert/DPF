@@ -1,1 +1,1 @@
-web: gunicorn dpf.wsgi
+web: gunicorn DPF.wsgi
