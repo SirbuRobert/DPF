@@ -237,3 +237,53 @@ def import_elevi_view(request):
         'form': form,
         'parole_generate': parole_generate
     })
+
+#view quiz, ala de personalitate
+def quiz_view(request):
+    quiz = [
+        {
+            'id': 1,
+            'text': 'Cum reacționezi la stres?',
+            'optiuni': [
+                ('A', 'Rămân calm și analizez situația'),
+                ('B', 'Mă agit și devin tensionat'),
+                ('C', 'Prefer să mă retrag și să mă liniștesc singur')
+            ]
+        },
+        {
+            'id': 2,
+            'text': 'Preferi munca individuală sau în echipă?',
+            'optiuni': [
+                ('D', 'Îmi place să lucrez singur'),
+                ('E', 'Mă simt motivat într-o echipă')
+            ]
+        },
+        {
+            'id': 3,
+            'text': 'Ce te motivează cel mai mult?',
+            'optiuni': [
+                ('F', 'Succesul personal'),
+                ('G', 'Recunoașterea celorlalți'),
+                ('H', 'Siguranța și stabilitatea'),
+                ('I', 'Posibilitatea de a fi creativ')
+            ]
+        }
+    ]
+
+    if request.method == 'POST':
+        coduri = []
+        for q in quiz:
+            cod = request.POST.get(f"q_{q['id']}")
+            if cod:
+                coduri.append(cod)
+
+        cod_final = ''.join(coduri)
+
+        # Salvăm rezultatul în Student
+        student = Student.objects.get(user=request.user)
+        student.cod_quiz = cod_final
+        student.save()
+
+        return render(request, 'quiz/rezultat.html', {'cod': cod_final})
+
+    return render(request, 'quiz/quiz.html', {'quiz': quiz})

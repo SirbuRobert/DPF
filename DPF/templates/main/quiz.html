@@ -1,0 +1,17 @@
+<h2>Quiz de personalitate</h2>
+<form method="POST">
+    {% csrf_token %}
+    {% for q in quiz %}
+        <div>
+            <p><strong>{{ q.text }}</strong></p>
+            <select name="q_{{ q.id }}">
+                <option value="">Alege o opțiune</option>
+                {% for cod, text in q.optiuni %}
+                    <option value="{{ cod }}">{{ text }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <hr>
+    {% endfor %}
+    <button type="submit">Trimite răspunsurile</button>
+</form>
