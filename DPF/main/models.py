@@ -179,19 +179,20 @@ class MaterialDidactic(models.Model):
     Acum, acesta este legat de o LECȚIE.
     """
     
-    # --- Legăturile MODIFICATE ---
     lectie = models.ForeignKey(
         Lectie,
         on_delete=models.CASCADE,
-        related_name="materiale" # O lecție are mai multe materiale
+        related_name="materiale" 
     )
     
+    # --- MODIFICARE AICI ---
+    # Am șters 'limit_choices_to' pentru a evita bug-ul
     autor = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL,
         null=True,
-        related_name="materiale_create",
-        limit_choices_to={'rol': User.Rol.PROFESOR} # Doar profesorii pot fi autori
+        related_name="materiale_create"
+        # limit_choices_to={'rol': User.Rol.PROFESOR}  <-- AM ȘTERS ASTA
     )
 
     # --- Conținutul Efectiv ---
@@ -203,7 +204,7 @@ class MaterialDidactic(models.Model):
         blank=True, 
         null=True,
         verbose_name="Fișier atașat (doar PDF)",
-        validators=[FileExtensionValidator(allowed_extensions=['pdf'])] # <-- Validatorul e aici!
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])]
     )
     
     data_adaugarii = models.DateTimeField(auto_now_add=True)
@@ -214,5 +215,4 @@ class MaterialDidactic(models.Model):
         verbose_name_plural = "Materiale Didactice"
 
     def __str__(self):
-        # Va afișa: "Primul Război Mondial - Rezumat.pdf"
         return f"{self.lectie.titlu} - {self.titlu}"
