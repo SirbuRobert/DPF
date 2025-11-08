@@ -80,6 +80,8 @@ class ElevProfile(models.Model):
         verbose_name="Litera clasei"
     )
 
+    cod_quiz = models.CharField(max_length=20, blank=True, null=True)
+
     def __str__(self):
         # Va afișa ceva de genul "Elev: popescu.ion - 9A"
         return f"Elev: {self.user.username} - {self.an_studiu}{self.clasa_litera}"

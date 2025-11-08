@@ -7,4 +7,5 @@ urlpatterns = [
     path('profil/', views.profil_view, name='profil'),
     path('materii/', views.materii_view, name='materii'),
     path('import-elevi/', views.import_elevi_view, name='import_elevi'),
+    path('quiz/',views.quiz_view, name='quiz')
 ]
