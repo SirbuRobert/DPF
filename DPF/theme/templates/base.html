@@ -1,19 +1,92 @@
-{% load static tailwind_tags %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
-    <title>Django Tailwind</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    {% tailwind_css %}
+    <title>Page 1 - Home page | Titlu lung</title>
+    <link href="\..\static\css\dist\styles.css" rel="stylesheet"> 
+    <style>
+        /* Stiluri specifice pentru elementele grafice (dealuri și fundal) */
+        .header-bg {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%234B0082" fill-opacity="1" d="M0,96L60,112C120,128,240,160,360,186.7C480,213,600,235,720,224C840,213,960,171,1080,176C1200,181,1320,235,1380,261.3L1440,288L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z"></path></svg>');
+            background-size: cover;
+            background-position: center;
+        }
+        /* Am folosit un SVG placeholder inline pentru a simula fundalul de dealuri mov/verde */
+        .hill-wave {
+            /* De obicei, aceste forme sunt obținute prin SVG sau CSS shapes, 
+               aici simulăm doar culorile de fundal: purple-dark sus și green-dark/light jos */
+            height: 250px; /* Înlocuiește cu dimensiunea reală */
+            position: relative;
+            z-index: 10;
+        }
+    </style>
 </head>
+<body class="font-sans bg-gray-50 min-h-screen">
 
-<body class="bg-gray-50 text-black font-serif leading-normal tracking-normal">
-<div class="container mx-auto">
-    <section class="flex items-center justify-center h-screen">
-        <h1 class="text-5xl">Django + Tailwind = ❤️</h1>
-    </section>
-</div>
+    <header class="sticky top-0 z-50 p-4 flex items-center justify-between bg-purple-dark text-white">
+        <div class="flex items-center space-x-4">
+            <div class="w-8 h-8 flex items-center justify-center rounded-full bg-white">
+                <span class="text-2xl text-purple-dark">👾</span>
+            </div>
+            <h1 class="text-xl font-bold">Titlu lung</h1>
+        </div>
+        <nav class="hidden md:flex space-x-6">
+            <a href="#" class="hover:underline transition-colors font-medium">Contact</a>
+            <a href="#" class="hover:underline transition-colors font-medium">Profesori</a>
+            <button class="px-3 py-1 bg-white text-purple-dark rounded-md font-bold transition-colors hover:bg-gray-200">
+                Login
+            </button>
+        </nav>
+        </header>
+
+    <main class="w-full">
+        <section class="hill-wave bg-purple-dark">
+            <div class="h-full bg-cover bg-center" style="background-image: url('placeholder-background-mov-nori.png');">
+                </div>
+            
+            <div class="absolute bottom-0 w-full h-24 bg-green-dark" style="clip-path: polygon(0 100%, 100% 100%, 100% 50%, 75% 80%, 50% 60%, 25% 90%, 0 70%);"></div>
+            <div class="absolute bottom-0 w-full h-16 bg-green-light" style="clip-path: polygon(0 100%, 100% 100%, 100% 60%, 70% 90%, 40% 70%, 15% 95%, 0 80%);"></div>
+        </section>
+
+        <section class="container mx-auto p-8 mt-12 mb-8 md:grid md:grid-cols-3 gap-8 items-center">
+            
+            <div class="md:col-span-1 h-80 bg-white shadow-xl rounded-lg p-4 flex items-center justify-center border border-gray-200">
+                
+            </div>
+
+            <div class="md:col-span-2 p-8 mt-8 md:mt-0 bg-purple-light shadow-md rounded-lg">
+                <h2 class="text-2xl font-bold mb-4 text-purple-dark">About us</h2>
+                <p class="leading-normal text-gray-700">
+                    paragraf generic. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+            </div>
+        </section>
+        
+    </main>
+
+    <footer class="bg-purple-dark text-white pt-4 pb-8 mt-12">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-start md:items-center p-4">
+            
+            <div class="space-y-1 mb-6 md:mb-0">
+                <h3 class="text-xl font-bold mb-2">CONTACTEAZA-NE:</h3>
+                <p class="text-sm">
+                    <strong class="font-bold">Telefon:</strong> 077777777
+                </p>
+                <p class="text-sm">
+                    <strong class="font-bold">E-mail:</strong> test@test.test
+                </p>
+                <p class="text-sm">
+                    <strong class="font-bold">Adresa:</strong> liceul tau strada numar chestii
+                </p>
+            </div>
+
+            <div class="w-8 h-8 flex items-center justify-center">
+                <span class="text-3xl text-white opacity-80">👾</span>
+            </div>
+
+        </div>
+    </footer>
+
 </body>
 </html>

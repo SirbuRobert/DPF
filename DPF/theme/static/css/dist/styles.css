@@ -8,15 +8,23 @@
     --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace;
-    --color-red-100: oklch(34.022% 0.08959 23.088);
-    --color-red-700: oklch(50.5% 0.213 27.518);
+    
+    /* CULORI ACTUALIZATE PENTRU TEMA TA */
+    --color-purple-dark: oklch(22% 0.1 298); /* Mov Inchis - Antet, Subsol */
+    --color-purple-light: oklch(88% 0.05 310); /* Mov Deschis - Sectiunea "About us" */
+    --color-green-dark: oklch(55% 0.09 130); /* Verde Iarba Inchis - Dealuri */
+    --color-green-light: oklch(70% 0.1 130); /* Verde Iarba Deschis - Dealuri */
+
+    /* Culori generale păstrate/ajustate */
     --color-gray-50: oklch(98.5% 0.002 247.839);
     --color-gray-200: oklch(92.8% 0.006 264.531);
     --color-gray-500: oklch(55.1% 0.027 264.364);
     --color-gray-600: oklch(44.6% 0.03 256.802);
     --color-gray-700: oklch(37.3% 0.034 259.733);
+    
     --color-black: #000;
     --color-white: #fff;
+    
     --spacing: 0.25rem;
     --container-md: 28rem;
     --container-lg: 32rem;
@@ -364,17 +372,30 @@
     border-top-style: var(--tw-border-style);
     border-top-width: 8px;
   }
+  
+  /* CLASE DE CULOARE ACTUALIZATE */
   .bg-gray-50 {
-    background-color: red;
+    background-color: var(--color-gray-50);
   }
   .bg-gray-700 {
-    background-color: red;
+    background-color: var(--color-gray-700);
   }
-  .bg-red-100 {
-    background-color: red;
+  .bg-purple-dark {
+    background-color: var(--color-purple-dark);
   }
+  .bg-purple-light {
+    background-color: var(--color-purple-light);
+  }
+  .bg-green-dark {
+    background-color: var(--color-green-dark);
+  }
+  .bg-green-light {
+    background-color: var(--color-green-light);
+  }
+  /* .bg-red-100 a fost eliminat */
+
   .bg-white {
-    background-color: red;
+    background-color: var(--color-white);
   }
   .bg-cover {
     background-size: cover;
@@ -457,12 +478,14 @@
   .text-gray-500 {
     color: var(--color-gray-500);
   }
-  .text-red-700 {
-    color: var(--color-red-700);
-  }
   .text-white {
     color: var(--color-white);
   }
+  /* .text-red-700 a fost eliminat */
+  .text-purple-dark {
+    color: var(--color-purple-dark);
+  }
+  
   .shadow-inner {
     --tw-shadow: inset 0 2px 4px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.05));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -567,7 +590,7 @@
 @property --tw-shadow {
   syntax: "*";
   inherits: false;
-  initial-value: 0 0 #0000;
+  initial-value: 0 0 #000;
 }
 @property --tw-shadow-color {
   syntax: "*";
@@ -581,7 +604,7 @@
 @property --tw-inset-shadow {
   syntax: "*";
   inherits: false;
-  initial-value: 0 0 #0000;
+  initial-value: 0 0 #000;
 }
 @property --tw-inset-shadow-color {
   syntax: "*";
@@ -627,7 +650,7 @@
 @property --tw-ring-offset-shadow {
   syntax: "*";
   inherits: false;
-  initial-value: 0 0 #0000;
+  initial-value: 0 0 #000;
 }
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
