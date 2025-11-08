@@ -1,65 +1,86 @@
-# inspect_and_save_openstax_paragraphs.py
-from datasets import load_dataset, Dataset
+from datasets import load_dataset
+import re, unicodedata
 from pprint import pprint
 
-raw = load_dataset("HuggingFaceTB/openstax_paragraphs", split="train")
+# ===================== CONFIG =====================
+SAVE_PARQUET = "data/openstax_text.formatted.parquet"  # set to None to skip
+SAVE_CSV     = None                                     # e.g., "data/openstax_text.formatted.csv"
+NUM_PROC     = 8                                        # parallel workers for map()
+MIN_CHARS    = 50                                       # drop very short lines
+ALPHA_RATIO  = 0.4                                      # drop lines with too few letters
+ORDER        = "shuffle"                                # "shuffle", "length_asc", "length_desc", or None
+PREVIEW_ROWS = 3                                        # how many rows to print after formatting
+# ===================================================
 
-# --- A) Visualize structure of the first book ---
-b0 = raw[0]
-print("Book title:", b0.get("book_title"))
-print("Language:", b0.get("language"))
+def normalize_text(t: str) -> str:
+    # Unicode normalize, collapse whitespace, strip
+    t = unicodedata.normalize("NFKC", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
 
-def print_tree(chapter, indent=0, max_sections=3):
-    print("  " * indent + f"- {chapter.get('title')!r}")
-    secs = chapter.get("sections") or []
-    for s in secs[:max_sections]:
-        t = (s.get("title") or "")[:60]
-        print("  " * (indent+1) + f"• section: {t!r}")
-    if len(secs) > max_sections:
-        print("  " * (indent+1) + f"• ... ({len(secs)-max_sections} more sections)")
-    for child in (chapter.get("chapters") or []):
-        print_tree(child, indent+1, max_sections)
+def alpha_ratio(t: str) -> float:
+    if not t: return 0.0
+    letters = sum(ch.isalpha() for ch in t)
+    return letters / max(1, len(t))
 
-print("\nOutline preview (first book):")
-for ch in (b0.get("chapters") or [])[:5]:
-    print_tree(ch, indent=0)
+def format_batch(batch):
+    texts = batch["text"]
+    norm = [normalize_text(t) for t in texts]
+    # lengths
+    char_len = [len(t) for t in norm]
+    word_len = [len(t.split()) for t in norm]
+    return {
+        "text": norm,
+        "char_len": char_len,
+        "word_len": word_len,
+    }
 
-# --- B) Build chapter → summary pairs ---
-SUMMARY_KEYS = ["summary","chapter summary","section summary","overview","chapter review","key concepts","key terms"]
+def filter_row(example):
+    t = example["text"]
+    if t is None or t == "":
+        return False
+    if len(t) < MIN_CHARS:
+        return False
+    if alpha_ratio(t) < ALPHA_RATIO:
+        return False
+    return True
 
-def extract_pairs(book_row):
-    pairs = []
-    def walk(ch):
-        secs = ch.get("sections") or []
-        # full chapter text
-        chapter_text = "\n\n".join(s["paragraph"] for s in secs if s.get("paragraph"))
-        # summary from special sections
-        summary_text = "\n".join(
-            s["paragraph"] for s in secs
-            if s.get("title") and any(k in s["title"].lower() for k in SUMMARY_KEYS) and s.get("paragraph")
-        )
-        if chapter_text and summary_text:
-            pairs.append({
-                "book_title": book_row.get("book_title"),
-                "chapter_title": ch.get("title"),
-                "document": chapter_text,
-                "summary": summary_text,
-            })
-        for c in (ch.get("chapters") or []):
-            walk(c)
-    for c in (book_row.get("chapters") or []):
-        walk(c)
-    return pairs
+def main():
+    # 1) Load full train split (non-streaming)
+    ds = load_dataset("crumb/openstax-text", split="train")
+    print(ds)  # shows num_rows & features: ['text']
 
-all_pairs = []
-for row in raw:
-    all_pairs.extend(extract_pairs(row))
+    # 2) Clean/format + add length features
+    ds = ds.map(format_batch, batched=True, num_proc=NUM_PROC)
 
-print(f"\nBuilt {len(all_pairs)} (document → summary) pairs.")
-pprint(all_pairs[0] if all_pairs else {})
+    # 3) Filter junk/short lines
+    ds = ds.filter(filter_row, num_proc=NUM_PROC)
 
-# --- C) Save to Parquet/CSV for training ---
-pairs_ds = Dataset.from_list(all_pairs)
-pairs_ds.to_parquet("data/openstax_chapter_summaries.parquet")
-pairs_ds.to_csv("data/openstax_chapter_summaries.csv")
-print("Saved to data/openstax_chapter_summaries.parquet and .csv")
+    # 4) Order
+    if ORDER == "shuffle":
+        ds = ds.shuffle(seed=42)
+    elif ORDER == "length_asc":
+        ds = ds.sort("char_len")     # shortest → longest
+    elif ORDER == "length_desc":
+        ds = ds.sort("char_len", reverse=True)  # longest → shortest
+    # else: keep original order
+
+    # 5) Preview a few rows
+    print("\nSchema / features:")
+    pprint(ds.features)
+    print(f"\nRows after formatting/filtering: {len(ds)}")
+    print("\nSample rows:")
+    for r in ds.select(range(min(PREVIEW_ROWS, len(ds)))):
+        show = {k: (r[k][:200] + "…") if k == "text" and len(r[k]) > 200 else r[k] for k in r}
+        pprint(show)
+
+    # 6) Save
+    if SAVE_PARQUET:
+        ds.to_parquet(SAVE_PARQUET)  # requires pyarrow
+        print(f"\nSaved → {SAVE_PARQUET}")
+    if SAVE_CSV:
+        ds.to_csv(SAVE_CSV)
+        print(f"Saved → {SAVE_CSV}")
+
+if __name__ == "__main__":
+    main()
