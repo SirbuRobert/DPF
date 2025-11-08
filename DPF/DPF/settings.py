@@ -90,12 +90,15 @@ WSGI_APPLICATION = 'DPF.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL', f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dpf_db',
+        'USER': 'dpf_db_user',
+        'PASSWORD': 'FEvi1362zgtSnWEa10BJy6uqWo10dVut',
+        'HOST': 'dpg-d47ktaq4d58c7388gg0g-a',
+        'PORT': '5432',
+    }
 }
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
