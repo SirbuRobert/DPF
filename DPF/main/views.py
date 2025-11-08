@@ -1,10 +1,49 @@
+# DPF/main/views.py
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required # Importat o singură dată
+from django.db import transaction
+from django import forms # Necesar pentru 'raise forms.ValidationError'
+
+# Importăm Modelele
 from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile
-from .forms import CustomUserCreationForm, ElevProfileForm, ProfesorProfileForm
+
+# Importăm Formularele
+from .forms import (
+    CustomUserCreationForm, 
+    ElevProfileForm, 
+    ProfesorProfileForm, 
+    ImportEleviForm
+)
+
+# Importuri pentru logica de import CSV
+import csv
+import io
+import string
+import random
+
+# --- Funcții ajutătoare pentru generare conturi ---
+# (Acestea stau aici, NU în interiorul altei funcții)
+
+def generate_username(last_name, first_name):
+    """Generează un username unic, ex: popescu.ion"""
+    base_username = f"{last_name.lower().strip().replace(' ', '')}.{first_name.lower().strip().replace(' ', '')}"
+    username = base_username
+    count = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}{count}"
+        count += 1
+    return username
+
+def generate_password(length=10):
+    """Generează o parolă temporară simplă"""
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choice(chars) for i in range(length))
+
 
 # --- 1. View-ul pentru Homepage (Acasă) ---
 def home_view(request):
@@ -13,30 +52,24 @@ def home_view(request):
     Logica diferă dacă utilizatorul este logat sau nu.
     """
     if request.user.is_authenticated:
-        # --- Utilizator LOGAT (Design-ul 'home page - logged in.png') ---
         context = {
-            'materiale_recente': [] # Golește lista momentan
+            'materiale_recente': []
         }
-        
-        # Logica pt a prelua materiale (similară cu vechiul dashboard)
         try:
             if request.user.rol == User.Rol.ELEV:
                 an_elev = request.user.elev_profile.an_studiu
-                materiale = MaterialDidactic.objects.filter(an_studiu=an_elev)[:5] # Ultimele 5
+                materiale = MaterialDidactic.objects.filter(an_studiu=an_elev).order_by('-data_adaugarii')[:5]
                 context['materiale_recente'] = materiale
                 
             elif request.user.rol == User.Rol.PROFESOR:
-                materiale = MaterialDidactic.objects.filter(autor=request.user)[:5] # Ultimele 5
+                materiale = MaterialDidactic.objects.filter(autor=request.user).order_by('-data_adaugarii')[:5]
                 context['materiale_recente'] = materiale
         except (ElevProfile.DoesNotExist, ProfesorProfile.DoesNotExist):
-            # Profilul nu e completat, dar e ok
             pass 
             
         return render(request, 'main/home.html', context)
     
     else:
-        # --- Utilizator NELOGAT (Design-ul 'home page.png') ---
-        # Doar afișăm pagina publică
         return render(request, 'main/home.html', {})
 
 # --- 2. View-ul pentru Înregistrare (Create Account) ---
@@ -47,40 +80,34 @@ def register_view(request):
         prof_form = ProfesorProfileForm(request.POST)
         
         if user_form.is_valid():
-            user = user_form.save() # Salvăm utilizatorul
+            user = user_form.save() 
             
-            # Acum, salvăm profilul corect
             try:
                 if user.rol == User.Rol.ELEV:
                     if elev_form.is_valid():
                         elev_profile = elev_form.save(commit=False)
-                        elev_profile.user = user # Setăm legătura
+                        elev_profile.user = user 
                         elev_profile.save()
                     else:
-                        # Dacă formularul de elev e invalid, aruncăm o eroare
-                        raise forms.ValidationError("Datele de elev sunt invalide.")
+                        raise forms.ValidationError(f"Datele de elev sunt invalide: {elev_form.errors.as_text()}")
 
                 elif user.rol == User.Rol.PROFESOR:
                     if prof_form.is_valid():
                         prof_profile = prof_form.save(commit=False)
-                        prof_profile.user = user # Setăm legătura
+                        prof_profile.user = user 
                         prof_profile.save()
                     else:
-                        # Dacă formularul de profesor e invalid, aruncăm o eroare
-                        raise forms.ValidationError("Datele de profesor sunt invalide.")
+                        raise forms.ValidationError(f"Datele de profesor sunt invalide: {prof_form.errors.as_text()}")
                 
-                # Dacă totul a mers bine, logăm utilizatorul și îl trimitem acasă
                 login(request, user)
                 messages.success(request, "Cont creat cu succes!")
                 return redirect('home')
 
             except Exception as e:
-                # Dacă a apărut o eroare (de ex. profil invalid), ștergem userul creat
                 user.delete()
                 messages.error(request, f"Eroare la crearea profilului: {e}")
 
     else:
-        # Dacă e GET, creăm formulare goale
         user_form = CustomUserCreationForm()
         elev_form = ElevProfileForm()
         prof_form = ProfesorProfileForm()
@@ -121,13 +148,10 @@ def logout_view(request):
 # --- 5. View-uri Stub (pe care le vei dezvolta) ---
 @login_required
 def profil_view(request):
-    # Aici vei afișa pagina de profil (design-ul 'Profil.png')
     return render(request, 'main/profil.html', {})
 
 @login_required
 def materii_view(request):
-    # Aici vei afișa pagina cu *toate* materialele
-    # (Logica e similară cu cea din home_view, dar fără '[:5]')
     context = {}
     try:
         if request.user.rol == User.Rol.ELEV:
@@ -141,3 +165,75 @@ def materii_view(request):
         pass
 
     return render(request, 'main/materii.html', context)
+
+
+# --- 6. View-ul pentru Import Elevi (din interfața web) ---
+@staff_member_required # Doar utilizatorii cu is_staff=True pot accesa
+def import_elevi_view(request):
+    """
+    Pagină web pentru a încărca un CSV și a crea conturi de elevi.
+    """
+    parole_generate = [] # Lista unde vom stoca parolele
+
+    if request.method == 'POST':
+        form = ImportEleviForm(request.POST, request.FILES)
+        
+        if form.is_valid():
+            an_studiu = form.cleaned_data['an_studiu']
+            clasa_litera = form.cleaned_data['clasa_litera']
+            fisier_csv = form.cleaned_data['fisier_csv']
+            
+            try:
+                with transaction.atomic():
+                    fisier_text = io.StringIO(fisier_csv.read().decode('utf-8'))
+                    reader = csv.reader(fisier_text)
+                    
+                    next(reader, None) # Sărim peste header
+
+                    for row in reader:
+                        if not row: continue 
+                        
+                        try:
+                            last_name = row[0].strip()
+                            first_name = row[1].strip()
+
+                            if not last_name or not first_name:
+                                messages.warning(request, f"Rând invalid (ignorat): {row}")
+                                continue
+
+                            username = generate_username(last_name, first_name)
+                            password = generate_password()
+
+                            user = User.objects.create_user(
+                                username=username,
+                                password=password,
+                                first_name=first_name,
+                                last_name=last_name,
+                                rol=User.Rol.ELEV
+                            )
+
+                            ElevProfile.objects.create(
+                                user=user,
+                                an_studiu=an_studiu,
+                                clasa_litera=clasa_litera
+                            )
+                            
+                            parole_generate.append((username, password, f"{last_name} {first_name}"))
+
+                        except Exception as e:
+                            raise Exception(f"Eroare la procesarea rândului {row}: {e}")
+
+                messages.success(request, f"Import reușit! Au fost create {len(parole_generate)} conturi pentru clasa {an_studiu}{clasa_litera}.")
+            
+            except UnicodeDecodeError:
+                messages.error(request, "Eroare: Fișierul nu pare a fi codat în UTF-8. Salvează-l ca 'CSV (UTF-8)'.")
+            except Exception as e:
+                messages.error(request, f"Importul a eșuat. Niciun cont nu a fost creat. Detaliu: {e}")
+
+    else:
+        form = ImportEleviForm()
+
+    return render(request, 'main/import_elevi.html', {
+        'form': form,
+        'parole_generate': parole_generate
+    })
