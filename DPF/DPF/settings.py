@@ -46,8 +46,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
-    'tailwind',
-    'theme',
 ]
 
 MIDDLEWARE = [
@@ -90,14 +88,10 @@ WSGI_APPLICATION = 'DPF.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dpf_db',
-        'USER': 'dpf_db_user',
-        'PASSWORD': 'FEvi1362zgtSnWEa10BJy6uqWo10dVut',
-        'HOST': 'dpg-d47ktaq4d58c7388gg0g-a',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        # Caută variabila 'DATABASE_URL' din fișierul .env
+        default=os.environ.get('DATABASE_URL')
+    )
 }
 
 # Password validation
@@ -156,7 +150,3 @@ MIDDLEWARE = [
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-TAILWIND_APP_NAME = 'theme'
