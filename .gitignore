@@ -6,3 +6,11 @@ __pycache__/
 DPF/db.sqlite3
 
 .env
+
+DPF/Ai/quiz_model
+
+DPF/Ai/t5_small_summarizer
+
+DPF/Ai/t5_small_summarizer/model.safetensors
+
+DPF/Ai/t5_small_summarizer/training_args.bin
