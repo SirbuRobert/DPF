@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Materii — DPF{% endblock %}
+
+{% block content %}
+<section>
+  <h1 class="h2">Materiale</h1>
+
+  {% if materiale %}
+    <div class="cards-grid">
+      {% for m in materiale %}
+        <article class="material-card">
+          <header>
+            <h3 class="material-title">{{ m.titlu }}</h3>
+            <div class="material-meta">
+              <span>{{ m.materie.nume }}</span> ·
+              <span>{{ m.data_adaugarii|date:"d.m.Y" }}</span>
+              {% if m.autor %} · <span>prof. {{ m.autor.get_full_name|default:m.autor.username }}</span>{% endif %}
+            </div>
+          </header>
+          <footer>
+            <a class="btn btn--primary" href="{{ m.fisier.url }}" target="_blank">Descarcă</a>
+          </footer>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Nu există materiale.</p>
+  {% endif %}
+</section>
+{% endblock %}

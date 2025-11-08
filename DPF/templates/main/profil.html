@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Profil — DPF{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1 class="h2">Profilul meu</h1>
+  <p>Bun venit, {{ request.user.get_full_name|default:request.user.username }}.</p>
+  <p>Rol: <strong>{{ request.user.rol }}</strong></p>
+</section>
+{% endblock %}

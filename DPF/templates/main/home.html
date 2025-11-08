@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Acasă — DPF{% endblock %}
+
+{% block content %}
+
+<!-- Slideshow -->
+<div class="slideshow">
+  <div class="slide overlay"></div>
+
+  <div class="slides active">
+    <img src="{% static 'main/res/image1.jpg' %}" alt="fundal 1">
+  </div>
+  <div class="slides">
+    <img src="{% static 'main/res/image2.jpg' %}" alt="fundal 2">
+  </div>
+  <div class="slides">
+    <img src="{% static 'main/res/image3.jpg' %}" alt="fundal 3">
+  </div>
+</div>
+
+{% if user.is_authenticated %}
+<section class="materii-section">
+  <div class="materii-head">
+    <h2 class="section-title">Materii</h2>
+    <a href="{% url 'materii' %}" class="materii-link-all">Vezi toate →</a>
+  </div>
+
+  {# Derivăm materii din materiale_recente #}
+  {% regroup materiale_recente|dictsort:"materie.nume" by materie as materii_group %}
+
+  <div class="materii-grid">
+    {% for grp in materii_group %}
+      <a class="materie-card" href="{{ grp.grouper.get_absolute_url|default:'{% url "materii" %}' }}">
+        <div class="materie-icon">{{ grp.grouper.nume|first|upper }}</div>
+        <div class="materie-body">
+          <h3 class="materie-title">{{ grp.grouper.nume }}</h3>
+          {% with first=grp.list.0 %}
+            <p class="materie-desc">
+              {{ first.titlu|default:"Material nou" }}
+              {% if grp.list|length > 1 %}
+                <span class="muted">(+{{ grp.list|length|add:'-1' }})</span>
+              {% endif %}
+            </p>
+          {% endwith %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="about-section">
+  <div class="about-image-block">
+    <img src="{% static 'main/res/about-placeholder.jpg' %}" class="about-image" alt="Despre noi">
+  </div>
+  <div class="about-content-box">
+    {% if user.is_authenticated %}
+      <h2 class="about-title">Materiale recente</h2>
+      <ul class="recent-list">
+        {% for m in materiale_recente %}
+          <li>
+            <a class="about-link" href="{{ m.fisier.url }}" target="_blank">
+              {{ m.titlu }} <span class="muted">({{ m.materie.nume }}, {{ m.data_adaugarii|date:"d.m.Y" }})</span>
+            </a>
+          </li>
+        {% empty %}
+          <li class="muted">Nu există materiale recente.</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <h2 class="about-title">About us</h2>
+      <p class="about-text">Paragraf generic. Lorem ipsum dolor sit amet…</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Simple slideshow rotation
+  (function(){
+    const slides = Array.from(document.querySelectorAll('.slides'));
+    let i = 0;
+    function tick(){
+      slides.forEach(s => s.classList.remove('active'));
+      slides[i].classList.add('active');
+      i = (i + 1) % slides.length;
+      setTimeout(tick, 4000);
+    }
+    tick();
+  })();
+</script>
+{% endblock %}

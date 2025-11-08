@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Înregistrare — DPF{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+  <h1 class="h2">Creează cont</h1>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <fieldset class="fieldset">
+      <legend>Date cont</legend>
+      <div class="form-grid">
+        {% for field in user_form %}
+          <div class="form-field">
+            <label>{{ field.label }}{% if field.field.required %}*{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<small class="help">{{ field.help_text }}</small>{% endif %}
+            {% if field.errors %}<div class="error">{{ field.errors|striptags }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <fieldset id="elev-fields" class="fieldset" style="display:none;">
+      <legend>Profil Elev</legend>
+      <div class="form-grid">
+        {% for field in elev_form %}
+          <div class="form-field">
+            <label>{{ field.label }}{% if field.field.required %}*{% endif %}</label>
+            {{ field }}
+            {% if field.errors %}<div class="error">{{ field.errors|striptags }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <fieldset id="prof-fields" class="fieldset" style="display:none;">
+      <legend>Profil Profesor</legend>
+      <div class="form-grid">
+        {% for field in prof_form %}
+          <div class="form-field">
+            <label>{{ field.label }}{% if field.field.required %}*{% endif %}</label>
+            {{ field }}
+            {% if field.errors %}<div class="error">{{ field.errors|striptags }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <button class="btn btn--primary" type="submit">Creează cont</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Show Elev/Profesor fields based on user_form 'rol'
+  (function(){
+    const elevBox = document.getElementById('elev-fields');
+    const profBox = document.getElementById('prof-fields');
+    function toggle(){
+      const sel = document.querySelector('[name$="rol"]'); // works for 'rol' within form prefix
+      if(!sel){ elevBox.style.display='none'; profBox.style.display='none'; return; }
+      const val = (sel.value || '').toUpperCase();
+      elevBox.style.display = val === 'ELEV' ? '' : 'none';
+      profBox.style.display = val === 'PROFESOR' ? '' : 'none';
+    }
+    document.addEventListener('change', e => {
+      if(e.target && e.target.name && e.target.name.endsWith('rol')) toggle();
+    });
+    toggle();
+  })();
+</script>
+{% endblock %}
