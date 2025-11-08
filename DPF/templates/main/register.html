@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Creează un cont{% endblock %}
+
+{% block content %}
+    <div class="flex justify-center items-center py-20 px-4">
+        <div class="bg-white shadow-xl rounded-2xl p-8 md:p-12 w-full max-w-lg border-t-8 border-primary">
+            
+            <h2 class="text-3xl font-bold text-center text-text-dark mb-8">
+                Creeaza-ti un cont:
+            </h2>
+
+            {% if user_form.errors %}
+                <div class="p-3 mb-4 text-red-700 bg-red-100 rounded-lg">
+                    Te rugăm să corectezi erorile de mai jos.
+                </div>
+            {% endif %}
+
+            <form action="{% url 'register' %}" method="POST" class="space-y-4">
+                {% csrf_token %} <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark">{{ user_form.first_name.label }}</label>
+                        {{ user_form.first_name }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark">{{ user_form.last_name.label }}</label>
+                        {{ user_form.last_name }}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-text-dark">{{ user_form.username.label }}</label>
+                    {{ user_form.username }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-text-dark">{{ user_form.email.label }}</label>
+                    {{ user_form.email }}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark">{{ user_form.password.label }}</label>
+                        {{ user_form.password }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark">{{ user_form.password2.label }}</label>
+                        {{ user_form.password2 }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-text-dark">{{ user_form.rol.label }}</label>
+                    <div class="flex space-x-4 mt-1" id="rol-selector">
+                        {{ user_form.rol }}
+                    </div>
+                </div>
+
+                <div id="elev-fields" class="space-y-4 hidden pt-4 border-t">
+                    <h3 class="font-medium text-text-dark">Detalii Elev</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark">{{ elev_form.an_studiu.label }}</label>
+                        {{ elev_form.an_studiu }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark">{{ elev_form.clasa_litera.label }}</label>
+                        {{ elev_form.clasa_litera }}
+                    </div>
+                </div>
+
+                <div id="profesor-fields" class="space-y-4 hidden pt-4 border-t">
+                    <h3 class="font-medium text-text-dark">Detalii Profesor</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark">{{ prof_form.materie_predata.label }}</label>
+                        {{ prof_form.materie_predata }}
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-primary text-white font-bold p-3 rounded-lg hover:bg-opacity-80 transition-colors mt-6">
+                    Creaza!
+                </button>
+
+                <div class="text-center mt-4 text-sm">
+                    <a href="{% url 'login' %}" class="text-accent hover:underline">Am deja un cont</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block styles %}
+    <style>
+        /* Stilizăm câmpurile de text */
+        input[type="text"], input[type="email"], input[type="password"], select {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #D1D5DB; /* gray-300 */
+        }
+        
+        /* Stilizăm Radio buttons */
+        #rol-selector label {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+        #rol-selector input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Luăm elementele de care avem nevoie
+        const rolSelector = document.getElementById('rol-selector');
+        const elevRadio = document.querySelector('input[name="rol"][value="ELEV"]');
+        const profRadio = document.querySelector('input[name="rol"][value="PROFESOR"]');
+        
+        const elevFields = document.getElementById('elev-fields');
+        const profFields = document.getElementById('profesor-fields');
+
+        function toggleProfileFields() {
+            if (elevRadio.checked) {
+                elevFields.classList.remove('hidden');
+                profFields.classList.add('hidden');
+            } else if (profRadio.checked) {
+                elevFields.classList.add('hidden');
+                profFields.classList.remove('hidden');
+            } else {
+                // Ascunde ambele dacă nimic nu e selectat
+                elevFields.classList.add('hidden');
+                profFields.classList.add('hidden');
+            }
+        }
+
+        // Adăugăm evenimentul pe întregul container de radio buttons
+        rolSelector.addEventListener('change', toggleProfileFields);
+
+        // Verificăm și la încărcarea paginii (dacă formularul revine cu erori)
+        toggleProfileFields();
+    });
+</script>
+{% endblock %}

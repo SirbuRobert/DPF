@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+    <div class="flex justify-center items-center py-20 px-4">
+        <div class="bg-white shadow-xl rounded-2xl p-8 md:p-12 w-full max-w-md border-t-8 border-primary">
+            
+            <h2 class="text-3xl font-bold text-center text-text-dark mb-8">
+                Conecteaza-te la contul tau:
+            </h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div classclass="p-3 mb-4 text-red-700 bg-red-100 rounded-lg">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form action="{% url 'login' %}" method="POST" class="space-y-6">
+                {% csrf_token %} <div>
+                    <label for="id_username" class="block text-sm font-medium text-text-dark">Username:</label>
+                    {{ login_form.username }}
+                </div>
+                
+                <div>
+                    <label for="id_password" class="block text-sm font-medium text-text-dark">Parola:</label>
+                    {{ login_form.password }}
+                </div>
+                
+                <button type="submit"
+                        class="w-full bg-primary text-white font-bold p-3 rounded-lg hover:bg-opacity-80 transition-colors">
+                    Login!
+                </button>
+
+                <div class="flex justify-between mt-4 text-sm">
+                    <a href="{% url 'register' %}" class="text-accent hover:underline">Nu detin cont</a>
+                    <a href="#" class="text-gray-500 hover:underline">Am uitat parola :(</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block styles %}
+    <style>
+        #id_username, #id_password {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #D1D5DB; /* gray-300 */
+        }
+    </style>
+{% endblock %}
