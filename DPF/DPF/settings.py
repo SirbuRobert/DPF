@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -62,10 +63,16 @@ ROOT_URLCONF = 'DPF.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        
+        # ❗ MODIFICAREA ESTE AICI ❗
+        # Adaugă 'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        # (Dacă folosești 'pathlib.Path', adaugă: 'DIRS': [BASE_DIR / 'templates'],)
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], 
+        
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -143,3 +150,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
