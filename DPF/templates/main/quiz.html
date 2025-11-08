@@ -1,17 +1,116 @@
-<h2>Quiz de personalitate</h2>
-<form method="POST">
-    {% csrf_token %}
-    {% for q in quiz %}
-        <div>
-            <p><strong>{{ q.text }}</strong></p>
-            <select name="q_{{ q.id }}">
-                <option value="">Alege o opțiune</option>
-                {% for cod, text in q.optiuni %}
-                    <option value="{{ cod }}">{{ text }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <hr>
-    {% endfor %}
-    <button type="submit">Trimite răspunsurile</button>
-</form>
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="quiz-container">
+    <div class="quiz-card">
+        <h2 class="quiz-title">Quiz de personalitate</h2>
+        <form method="POST" class="quiz-form">
+            {% csrf_token %}
+            {% for q in quiz %}
+                <div class="quiz-question">
+                    <p class="quiz-text"><strong>{{ q.text }}</strong></p>
+                    <select name="q_{{ q.id }}" class="quiz-select">
+                        <option value="">Alege o opțiune</option>
+                        {% for cod, text in q.optiuni %}
+                            <option value="{{ cod }}">{{ text }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endfor %}
+            <div class="quiz-actions">
+                <button type="submit" class="quiz-btn">Trimite răspunsurile</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Fundal general similar cu pagina de profil */
+    body {
+        background-color: #f4e6ff;
+        font-family: 'Segoe UI', sans-serif;
+        margin: 0;
+        color: #3a006a;
+    }
+
+    /* Centrare conținut */
+    .quiz-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 60px 0;
+    }
+
+    /* Card alb rotunjit cu umbră */
+    .quiz-card {
+        background-color: #fff;
+        border-radius: 20px;
+        padding: 35px 45px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        width: 70%;
+        max-width: 700px;
+    }
+
+    /* Titlu mov */
+    .quiz-title {
+        text-align: center;
+        color: #5c00a3;
+        font-weight: 700;
+        font-size: 24px;
+        margin-bottom: 25px;
+    }
+
+    /* Întrebare */
+    .quiz-question {
+        margin-bottom: 25px;
+    }
+
+    .quiz-text {
+        font-weight: 600;
+        font-size: 17px;
+        margin-bottom: 8px;
+    }
+
+    /* Dropdown */
+    .quiz-select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #b87eff;
+        background-color: #f7ecff;
+        color: #3a006a;
+        font-size: 15px;
+        outline: none;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .quiz-select:focus {
+        border-color: #7b2ff7;
+        box-shadow: 0 0 5px #a46bff;
+    }
+
+    /* Buton */
+    .quiz-actions {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .quiz-btn {
+        background-color: #7b2ff7;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 25px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .quiz-btn:hover {
+        background-color: #9d4dff;
+        transform: scale(1.03);
+    }
+</style>
+
+{% endblock %}
