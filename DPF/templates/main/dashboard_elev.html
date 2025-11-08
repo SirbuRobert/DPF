@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dashboard Elev</title>
+</head>
+
+<body>
+    <h1>Salut, Elevule!</h1>
+
+    <p>Utilizator logat: {{ user.username }}</p>
+    <p>Rolul tău: {{ user.rol }}</p>
+    <p>Clasa ta: {{ user.elev_profile.an_studiu }}{{ user.elev_profile.clasa_litera }}</p>
+
+    <hr>
+
+    <h2>Materialele tale:</h2>
+    <ul>
+        {% for material in materiale %}
+        <li>
+            {{ material.titlu }} (de la materia {{ material.materie.nume }})
+
+            {% if material.fisier %}
+            - <a href="{{ material.fisier.url }}" target="_blank">[Descarcă fișier]</a>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li>Nu ai niciun material momentan.</li>
+        {% endfor %}
+    </ul>
+
+</body>
+
+</html>
