@@ -243,29 +243,30 @@ def quiz_view(request):
     quiz = [
         {
             'id': 1,
-            'text': 'Cum reacționezi la stres?',
+            'text': 'Cum preferi sa inveti?',
             'optiuni': [
-                ('A', 'Rămân calm și analizez situația'),
-                ('B', 'Mă agit și devin tensionat'),
-                ('C', 'Prefer să mă retrag și să mă liniștesc singur')
+                ('Explica-mi ca unui copil de liceu, fară să menționezi asta, si oferă-mi exerciții practice,', 'Incerc sa învăț prin practică'),
+                ('Explica-mi ca unui copil de liceu, fară să menționezi asta, si ofera-mi multe exemple', 'Prin multe exemple'),
+                ('Explica-mi ca unui copil de liceu, fară să menționezi asta, si oferă-mi teorie', 'Prin citirea teoriei')
+                
             ]
         },
         {
             'id': 2,
-            'text': 'Preferi munca individuală sau în echipă?',
+            'text': 'Cum preferi să ti se explice cand nu intelegi ceva?',
             'optiuni': [
-                ('D', 'Îmi place să lucrez singur'),
-                ('E', 'Mă simt motivat într-o echipă')
+                ('explicandu-mi pas cu pas', 'Vreau solutia integrala si sa invat pe baza ei'),
+                ('dandu-mi mici hinturi, nu raspunsul complet', 'Vreau doar mici indicii'),
+                ('Spunandu-mi doar unde sa caut informatii', 'Vreau sa caut singur informatii')
             ]
         },
         {
             'id': 3,
-            'text': 'Ce te motivează cel mai mult?',
+            'text': 'Cum preferi să fie structurat conținutul atunci când înveți ceva nou?',
             'optiuni': [
-                ('F', 'Succesul personal'),
-                ('G', 'Recunoașterea celorlalți'),
-                ('H', 'Siguranța și stabilitatea'),
-                ('I', 'Posibilitatea de a fi creativ')
+                ('Organizează explicațiile într-o structură clară, cu pași numerotați și concluzii la final.', 'Prin pași clari și concluzii'),
+                ('Prezintă ideile liber, dar cu exemple care curg natural una din alta.', 'Prin poveste liberă și exemple'),
+                ('Rezumă totul la esențial, evitând detaliile tehnice inutile.', 'Prin rezumate scurte și clare')
             ]
         }
     ]
@@ -277,13 +278,13 @@ def quiz_view(request):
             if cod:
                 coduri.append(cod)
 
-        cod_final = ''.join(coduri)
+        cod_final = ' '.join(coduri)
 
         # Salvăm rezultatul în Student
-        student = Student.objects.get(user=request.user)
+        student = ElevProfile.objects.get(user=request.user)
         student.cod_quiz = cod_final
         student.save()
 
-        return render(request, 'quiz/rezultat.html', {'cod': cod_final})
+        return render(request, 'main/rezultat.html', {'cod': cod_final})
 
-    return render(request, 'quiz/quiz.html', {'quiz': quiz})
+    return render(request, 'main/quiz.html', {'quiz': quiz})
