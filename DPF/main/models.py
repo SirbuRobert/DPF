@@ -3,6 +3,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings # Necesar pentru a lega la AUTH_USER_MODEL
+from django.core.validators import FileExtensionValidator
 
 # --- 1. Modelul User Customizat ---
 
@@ -162,12 +163,14 @@ class MaterialDidactic(models.Model):
     titlu = models.CharField(max_length=255, verbose_name="Titlu")
     descriere = models.TextField(blank=True, verbose_name="Descriere / Conținut text")
     
-    # Pentru upload de fișiere (Necesită MEDIA_ROOT și MEDIA_URL în settings.py)
+    # --- MODIFICAREA ESTE AICI ---
     fisier = models.FileField(
         upload_to='materiale_didactice/%Y/%m/', 
         blank=True, 
         null=True,
-        verbose_name="Fișier atașat"
+        verbose_name="Fișier atașat (doar PDF)",
+        # Adăugăm regula de validare:
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])]
     )
     
     data_adaugarii = models.DateTimeField(auto_now_add=True)
