@@ -23,7 +23,7 @@
 {% if user.is_authenticated %}
 <section class="materii-section">
   <div class="materii-head">
-    <h2 class="section-title">Materii</h2>
+    <h2 class="section-title">Materiale</h2>
     <a href="{% url 'materii' %}" class="materii-link-all">Vezi toate →</a>
   </div>
 
@@ -62,7 +62,7 @@
         {% for m in materiale_recente %}
           <li>
             <a class="about-link" href="{{ m.fisier.url }}" target="_blank">
-              {{ m.titlu }} <span class="muted">({{ m.materie.nume }}, {{ m.data_adaugarii|date:"d.m.Y" }})</span>
+              {{ m.titlu }} <span class="muted">({{ m.materie.nume }}{{ m.data_adaugarii|date:"d.m.Y" }})</span>
             </a>
           </li>
         {% empty %}
