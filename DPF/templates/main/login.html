@@ -3,8 +3,9 @@
 
 {% block content %}
 <section class="auth-card">
+<div class = "form-container">
   <h1 class="h2">Autentificare</h1>
-  <form method="post" novalidate>
+  <form method="post" novalidate class = "form-full">
     {% csrf_token %}
     {{ login_form.non_field_errors }}
     <div class="form-grid">
@@ -16,7 +17,8 @@
         </div>
       {% endfor %}
     </div>
-    <button class="btn btn--primary" type="submit">Intră</button>
+    <button class="btn btn--primary submit" type="submit">Intră</button>
   </form>
+</div>
 </section>
 {% endblock %}

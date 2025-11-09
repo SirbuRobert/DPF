@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}AI — {{ lectie.titlu }}{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1 class="h2">AI: {{ lectie.materie.nume }} — {{ lectie.titlu }}</h1>
+
+  {% if error %}
+    <p class="msg error">{{ error }}</p>
+  {% else %}
+    <h2 class="h3" style="margin-top:.75rem;">Rezumat</h2>
+    <p style="line-height:1.6">{{ summary }}</p>
+
+    <h2 class="h3" style="margin-top:1rem;">Întrebări generate</h2>
+    {% if quiz %}
+      <ol class="quiz-list">
+        {% for q in quiz %}
+          <li class="quiz-item">
+            <div class="q">Q: {{ q.question|default:q.question_text }}</div>
+            <div class="a muted">R: {{ q.answer }}</div>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="muted">Nu s-au putut genera întrebări.</p>
+    {% endif %}
+
+    {% if material %}
+      <p class="muted" style="margin-top:.75rem;">
+        Sursă: <a href="{{ material.fisier.url }}" target="_blank">{{ material.titlu }}</a>
+      </p>
+    {% endif %}
+  {% endif %}
+</section>
+{% endblock %}

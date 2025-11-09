@@ -1,6 +1,9 @@
 # DPF/main/views.py
+import os
+import tempfile
 
-from django.shortcuts import render, redirect
+from PyPDF2 import PdfReader
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
@@ -8,9 +11,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required # Importat o singură dată
 from django.db import transaction
 from django import forms # Necesar pentru 'raise forms.ValidationError'
+from Ai.ai_pipeline import run_full_pipeline  # adjust import
 
 # Importăm Modelele
-from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile
+from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie
 
 # Importăm Formularele
 from .forms import (
@@ -297,6 +301,67 @@ def quiz_view(request):
         student.cod_quiz = cod_final
         student.save()
 
-        return render(request, 'main/rezultat.html', {'cod': cod_final})
+        return render(request, 'main/quiz.html', {'cod': cod_final, 'quiz': quiz})
 
     return render(request, 'main/quiz.html', {'quiz': quiz})
+
+
+def _extract_text_from_pdf_path(pdf_path: str) -> str:
+    reader = PdfReader(pdf_path)
+    return "\n".join((page.extract_text() or "") for page in reader.pages)
+
+
+def lectie_ai_view(request, lectie_id: int):
+    lectie = get_object_or_404(Lectie, pk=lectie_id)
+
+    # pick the most recent PDF for this lesson
+    material = (
+        MaterialDidactic.objects
+        .filter(lectie=lectie, fisier__isnull=False)
+        .order_by("-data_adaugarii")
+        .first()
+    )
+    if not material:
+        return render(request, "main/lectie_ai.html", {
+            "lectie": lectie,
+            "error": "Nu există niciun fișier PDF asociat acestei lecții."
+        })
+
+    pdf_path = material.fisier.path  # local storage ⇒ this works
+
+    # If your pipeline ALREADY accepts PDFs, you can do:
+    # result = run_full_pipeline(pdf_path, num_questions=7, max_tokens_summ=150)
+
+    # Otherwise: extract text → write to a temp .txt → call run_full_pipeline(path_to_txt)
+    text = _extract_text_from_pdf_path(pdf_path)
+    if not text.strip():
+        return render(request, "main/lectie_ai.html", {
+            "lectie": lectie,
+            "material": material,
+            "error": "PDF-ul pare gol sau scanat (fără text). Pentru PDF-uri scanate ai nevoie de OCR."
+        })
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8") as tmp:
+        tmp.write(text)
+        tmp_path = tmp.name
+
+    try:
+        result = run_full_pipeline(tmp_path, num_questions=7, max_tokens_summ=150)
+    finally:
+        try: os.unlink(tmp_path)
+        except OSError: pass
+
+    if not result:
+        return render(request, "main/lectie_ai.html", {
+            "lectie": lectie,
+            "material": material,
+            "error": "Procesarea nu a returnat rezultat."
+        })
+
+    return render(request, "main/lectie_ai.html", {
+        "lectie": lectie,
+        "material": material,
+        "summary": result["final_summary"],
+        "quiz": result["quiz_results"],
+        "lang": result.get("original_lang", "en"),
+    })

@@ -80,8 +80,8 @@ class ElevProfile(models.Model):
         verbose_name="Litera clasei"
     )
 
-    cod_quiz = models.CharField(max_length=200, blank=True, null=True)
 
+    cod_quiz = models.TextField(null=True, blank=True)
     def __str__(self):
         # Va afișa ceva de genul "Elev: popescu.ion - 9A"
         return f"Elev: {self.user.username} - {self.an_studiu}{self.clasa_litera}"
@@ -172,6 +172,7 @@ class Lectie(models.Model):
         return f"{self.materie.nume} ({self.get_an_studiu_display()}) - {self.titlu}"
 
 
+
 # --- MODEL MODIFICAT: MATERIAL DIDACTIC ---
 class MaterialDidactic(models.Model):
     """
@@ -216,3 +217,4 @@ class MaterialDidactic(models.Model):
     def __str__(self):
         # Va afișa: "Primul Război Mondial - Rezumat.pdf"
         return f"{self.lectie.titlu} - {self.titlu}"
+    

@@ -37,9 +37,11 @@ a{color:inherit;text-decoration:none}
 .header-nav a{color:#fff;opacity:.95}
 .header-nav a:hover{opacity:1;text-decoration:underline}
 .btn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 .9rem;border-radius:10px;font-weight:700}
-.btn--light{background:var(--primary-dark);color:var(--primary)}
-.btn--primary{background:var(--primary);color:#fff}
-.btn--primary:hover{filter:brightness(1.06)}
+.btn--light{background:var(--primary-dark);color:var(--primary);transition:background-color .2s ease, color .2s ease, transform .12s ease;}
+.btn--light:hover{background-color:var(--accent); color:#fff; text-decoration: none;}
+.btn--primary{background:var(--primary);color:#fff; transition:background-color .2s ease, color .2s ease, transform .12s ease;}
+.btn--primary:hover{color: #fff; background-color: var(--accent);}
+
 
 /* ===== Messages ===== */
 .messages{list-style:none;margin:0 0 1rem;padding:0}
@@ -57,9 +59,29 @@ a{color:inherit;text-decoration:none}
 .material-meta{font-size:.9rem;color:var(--muted);display:flex;gap:.4rem;flex-wrap:wrap}
 
 /* ===== Auth forms ===== */
-.auth-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem;max-width:720px;margin:0 auto}
-.form-grid{display:grid;grid-template-columns:1fr;gap:1rem}
-@media(min-width:700px){.form-grid{grid-template-columns:repeat(2,1fr)}}
+.form-container{
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.form-full{
+  display:flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.auth-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem;max-width:720px;margin:0 auto; height: 30vw;}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media(min-width:700px){  }
 .form-field label{display:block;font-weight:700;margin-bottom:.25rem}
 .form-field input,.form-field select,.form-field textarea{
   width:100%;padding:.6rem .7rem;border:1px solid #e5e7eb;border-radius:10px;background:#fff;
@@ -107,5 +129,12 @@ a{color:inherit;text-decoration:none}
 .table thead th{background:#fafafa;font-weight:800}
 
 /* ===== Footer ===== */
-.site-footer{background:var(--primary-dark);color:#dbeafe;padding:2rem 0;margin-top:2rem}
+.site-footer{background:var(--primary-dark);color:var(--bg) ; padding:2rem 0;}
+.footer-container{margin-bottom: 0;}
 .footer-grid{display:grid;grid-template-columns:1fr}
+
+
+.quiz-list{margin:.5rem 0 0; padding-left:1.25rem}
+.quiz-item{margin:.5rem 0}
+.quiz-item .q{font-weight:700}
+.quiz-item .a{margin-top:.15rem}
