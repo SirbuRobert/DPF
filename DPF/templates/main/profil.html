@@ -1,10 +1,102 @@
-{% extends "base.html" %}
-{% block title %}Profil — DPF{% endblock %}
-
+{% extends 'base.html' %}
 {% block content %}
-<section class="card">
-  <h1 class="h2">Profilul meu</h1>
-  <p>Bun venit, {{ request.user.get_full_name|default:request.user.username }}.</p>
-  <p>Rol: <strong>{{ request.user.rol }}</strong></p>
-</section>
+<div class="profil-container">
+  <div class="profil-card">
+
+    <!-- Header cu poză și nume -->
+    <div class="profil-header">
+      <div class="profil-img-container">
+        <!-- ✅ SVG INLINE – NU mai ai nevoie de fișier static -->
+        <svg class="profil-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" aria-label="Avatar implicit">
+          <!-- cerc exterior (ring) -->
+          <circle cx="64" cy="64" r="58" fill="white" stroke="#7C4DFF" stroke-width="4"/>
+          <!-- cap -->
+          <circle cx="64" cy="50" r="20" fill="#E5D9FF"/>
+          <!-- umeri / bust -->
+          <path d="M24 106c0-20 18-32 40-32s40 12 40 32" fill="#D6C2FF"/>
+        </svg>
+      </div>
+
+      <div class="profil-info">
+        <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+        <p><strong>Rol:</strong> {{ user.get_rol_display }}</p>
+        {% if elev_profile %}
+          <p><strong>Clasa:</strong> {{ elev_profile.an_studiu }}{{ elev_profile.clasa_litera }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- Detalii cont -->
+    <div class="profil-details">
+      <p><strong>Username:</strong> {{ user.username }}</p>
+      <p><strong>Email:</strong> {{ user.email|default:"-" }}</p>
+    </div>
+
+    <!-- Quiz status -->
+    {% if cod_quiz_completat %}
+      <p class="quiz-completed">Quiz de personalitate completat ✅</p>
+    {% else %}
+      <p class="quiz-not">Quiz de personalitate: necompletat ❌</p>
+    {% endif %}
+
+    <!-- Butoane -->
+    <div class="profil-buttons">
+      <a href="{% url 'quiz' %}" class="btn-quiz">🧠 Completează quiz-ul</a>
+      <a href="{% url 'logout' %}" class="btn-logout">🚪 Deconectează-te</a>
+    </div>
+
+    <!-- Formular upload poză (preview local) -->
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      {% csrf_token %}
+      <label class="file-label">
+        <input type="file" name="poza_profil" accept="image/*" onchange="previewPoza(event)">
+        Alege o poză
+      </label>
+      <button type="submit" class="btn-upload">Actualizează poza</button>
+    </form>
+  </div>
+</div>
+
+<style>
+.profil-container{background:#f3e9f9;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.profil-card{background:#fff;padding:40px;border-radius:20px;box-shadow:0 8px 25px rgba(0,0,0,.1);width:80%;max-width:800px;font-family:'Segoe UI',sans-serif}
+.profil-header{display:flex;align-items:center;gap:25px}
+.profil-img-container{width:130px;height:130px;border-radius:50%;border:4px solid #7c4dff;overflow:hidden;display:flex;justify-content:center;align-items:center}
+.profil-svg{width:100%;height:100%;display:block}
+.profil-info h2{font-size:1.8rem;margin:0;color:#2b1247}
+.profil-info p{margin:5px 0;font-size:1rem}
+.profil-details{margin:20px 0}
+.quiz-completed{color:green;font-weight:700}
+.quiz-not{color:#b71c1c;font-weight:700}
+.profil-buttons{display:flex;gap:15px;margin:20px 0}
+.btn-quiz,.btn-logout,.btn-upload{background:#7c4dff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;transition:.2s;border:none;cursor:pointer}
+.btn-logout{background:#d32f2f}
+.btn-quiz:hover{background:#6936ff}
+.btn-logout:hover{background:#b71c1c}
+.btn-upload{background:#009688}
+.btn-upload:hover{background:#00796b}
+.upload-form{display:flex;gap:10px;align-items:center;margin-top:15px}
+.file-label input[type=file]{display:none}
+.file-label{background:#e0d4ff;padding:10px 14px;border-radius:8px;cursor:pointer;color:#421b68;font-weight:500}
+.file-label:hover{background:#cbb7ff}
+</style>
+
+<script>
+function previewPoza(e){
+  const file=e.target.files[0];
+  if(!file) return;
+  // înlocuim SVG-ul cu o imagine <img> pentru preview local
+  const container=document.querySelector('.profil-img-container');
+  container.innerHTML='';
+  const img=document.createElement('img');
+  img.style.width='100%';
+  img.style.height='100%';
+  img.style.objectFit='cover';
+  img.alt='Poză profil';
+  img.src=URL.createObjectURL(file);
+  container.appendChild(img);
+}
+</script>
 {% endblock %}
