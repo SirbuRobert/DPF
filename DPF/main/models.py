@@ -80,11 +80,16 @@ class ElevProfile(models.Model):
         verbose_name="Litera clasei"
     )
 
+
     cod_quiz = models.TextField(null=True, blank=True)
+
+    poza_profil = models.ImageField(upload_to='poze_profil/', null=True, blank=True)
+    
     def __str__(self):
         # Va afișa ceva de genul "Elev: popescu.ion - 9A"
         return f"Elev: {self.user.username} - {self.an_studiu}{self.clasa_litera}"
 
+    
 
 class ProfesorProfile(models.Model):
     """
