@@ -14,10 +14,13 @@ from django.contrib.admin.views.decorators import staff_member_required # Import
 from django.db import transaction
 from django import forms # Necesar pentru 'raise forms.ValidationError'
 from Ai.ai_pipeline import run_full_pipeline  # adjust import
+from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie, Mesaj # Adaugă Mesaj
+from django.db.models import Q # Asigură-te că Q este importat
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+
 from openai import OpenAI
 
-# Importăm Modelele
-from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie
 
 # Importăm Formularele
 from .forms import (
@@ -191,8 +194,6 @@ def profil_view(request):
     return render(request, 'main/profil.html', context)
 
     
-
-@login_required
 @login_required
 def materii_view(request):
     context = {}
@@ -415,6 +416,7 @@ def lectie_ai_view(request, lectie_id: int):
         "lang": result.get("original_lang", "en"),
     })
 
+@login_required # Accesibil doar utilizatorilor logați
 def material_text_view(request, pk):
     def clean_extracted_text(raw: str) -> str:
         # 1) normalize newlines/spaces
@@ -559,41 +561,34 @@ def api_summarize_selection(request):
 @login_required
 def profesori_view(request):
     """
-    Afișează toți profesorii. Pentru elevi, îi sortează pe:
-    1. Profesorii de la clasa lor (cei care au adăugat materiale pentru lecțiile clasei lor).
-    2. Restul profesorilor.
+    Afișează lista de profesori pentru ELEVI sau lista de elevi pentru PROFESORI.
     """
+    context = {}
+    
+    if request.user.rol == User.Rol.ELEV:
+        # LOGICA EXISTENTĂ: ELEVUL VEDE PROFESORII
+        
+        profesori_qs = (
+            ProfesorProfile.objects
+            .select_related('user', 'materie_predata')
+            .filter(user__rol=User.Rol.PROFESOR)
+            .order_by('user__last_name', 'user__first_name')
+        )
+        
+        profesori_la_clasa = []
+        restul_profesorilor = list(profesori_qs)
 
-    # 1. Obține toți utilizatorii care sunt profesori, preluând Materia dintr-un singur query
-    profesori_qs = (
-        ProfesorProfile.objects
-        .select_related('user', 'materie_predata')
-        .filter(user__rol=User.Rol.PROFESOR)
-        .order_by('user__last_name', 'user__first_name')
-    )
-
-    profesori_la_clasa = []
-    # Lista de bază, cu toți profesorii
-    restul_profesorilor = list(profesori_qs)
-
-    # Verifică dacă utilizatorul curent este elev
-    is_elev = request.user.rol == User.Rol.ELEV
-
-    if is_elev:
         try:
-            # Accesăm profilul elevului prin relația one-to-one
             elev_profile = request.user.elev_profile
             an_studiu = elev_profile.an_studiu
 
-            # Găsim ID-urile de user ale profesorilor care au încărcat materiale pentru acest an de studiu
             profesori_relevanti_ids = MaterialDidactic.objects.filter(
                 lectie__an_studiu=an_studiu
             ).values_list('autor_id', flat=True).distinct()
 
             profesori_la_clasa = []
             restul_profesorilor = []
-
-            # Separăm profesorii
+            
             for prof_profile in profesori_qs:
                 if prof_profile.user.id in profesori_relevanti_ids:
                     profesori_la_clasa.append(prof_profile)
@@ -601,15 +596,58 @@ def profesori_view(request):
                     restul_profesorilor.append(prof_profile)
 
         except ElevProfile.DoesNotExist:
-            # Dacă elevul nu are profil, tratăm ca pe orice alt utilizator (listă completă nesortată)
             pass
+            
+        context['lista_tip'] = 'PROFESORI'
+        context['profesori_la_clasa'] = profesori_la_clasa
+        context['restul_profesorilor'] = restul_profesorilor
+        
+    elif request.user.rol == User.Rol.PROFESOR:
+        # LOGICA NOUĂ: PROFESORUL VEDE ELEVII
 
-    context = {
-        'profesori_la_clasa': profesori_la_clasa,
-        'restul_profesorilor': restul_profesorilor,
-        'is_elev': is_elev,
-    }
-    return render(request, 'main/profesori.html', context)
+        elevi_qs = (
+            ElevProfile.objects
+            .select_related('user')
+            .filter(user__rol=User.Rol.ELEV)
+            .order_by('user__last_name', 'user__first_name')
+        )
+
+        elevi_la_clasele_mele = []
+        restul_elevilor = list(elevi_qs)
+
+        try:
+            profesor_profile = request.user.profesor_profile
+            # Presupunem că profesorul predă materia asociată la toate clasele unde există acea materie
+            # Alternativ, am putea folosi materialele încărcate de el pentru a filtra elevii, similar cu logica de sus
+            
+            # EXEMPLU: Filtrare bazată pe materialele încărcate de profesor
+            anii_predati = Lectie.objects.filter(
+                materie=profesor_profile.materie_predata,
+                materiale__autor=request.user
+            ).values_list('an_studiu', flat=True).distinct()
+            
+            elevi_la_clasele_mele = []
+            restul_elevilor = []
+            
+            for elev_profile in elevi_qs:
+                if elev_profile.an_studiu in anii_predati:
+                    elevi_la_clasele_mele.append(elev_profile)
+                else:
+                    restul_elevilor.append(elev_profile)
+
+        except ProfesorProfile.DoesNotExist:
+            pass # Nu ar trebui să se întâmple dacă rolul este Profesor
+
+        context['lista_tip'] = 'ELEVI'
+        context['elevi_la_clasele_mele'] = elevi_la_clasele_mele
+        context['restul_elevilor'] = restul_elevilor
+        
+    else:
+        # Pentru admini sau alte roluri, putem afișa o pagină goală sau o eroare 403
+        return redirect('home') 
+
+    # Redirecționăm către un șablon care poate gestiona ambele liste
+    return render(request, 'main/lista_utilizatorilor.html', context)
 
 @login_required
 def chat_view(request, destinatar_id):
@@ -661,3 +699,56 @@ def get_messages_ajax_view(request, destinatar_id):
         'destinatar': destinatar,
         'user': request.user # Trecem user-ul pentru a determina expeditorul în șablon
     })
+
+@login_required
+def chat_inbox_view(request):
+    """
+    Afișează lista de utilizatori cu care utilizatorul curent a avut conversații recente.
+    Permite căutarea de utilizatori noi.
+    """
+    user = request.user
+    
+    # 1. Găsirea utilizatorilor unici cu care s-a corespondat (SOLUȚIA PENTRU EROARE)
+    
+    # Obține ID-urile destinatarilor (cei cărora utilizatorul le-a trimis mesaje)
+    destinatari_ids = Mesaj.objects.filter(expeditor=user).values_list('destinatar_id', flat=True)
+    
+    # Obține ID-urile expeditorilor (cei de la care utilizatorul a primit mesaje)
+    expeditori_ids = Mesaj.objects.filter(destinatar=user).values_list('expeditor_id', flat=True)
+
+    # Combină seturile de ID-uri (UNION este distinct automat)
+    persoane_contactate_ids = destinatari_ids.union(expeditori_ids)
+    
+    # Preluăm obiectele User pentru persoanele contactate, excluzând utilizatorul curent.
+    conversatii_recente = (
+        User.objects
+        .filter(pk__in=persoane_contactate_ids)
+        .exclude(pk=user.pk)
+        .order_by('last_name')
+    )
+    
+    # 2. Logica de Căutare a Utilizatorilor
+    termen_cautare = request.GET.get('q')
+    utilizatori_gasiti = []
+    
+    if termen_cautare:
+        utilizatori_gasiti = (
+            User.objects
+            .filter(
+                Q(first_name__icontains=termen_cautare) | 
+                Q(last_name__icontains=termen_cautare) |
+                Q(username__icontains=termen_cautare)
+            )
+            # Excludem utilizatorul curent și pe cei care sunt deja în conversațiile recente
+            .exclude(pk=user.pk)
+            .exclude(pk__in=persoane_contactate_ids)
+            .order_by('last_name')
+        )
+
+    context = {
+        'conversatii_recente': conversatii_recente,
+        'utilizatori_gasiti': utilizatori_gasiti,
+        'termen_cautare': termen_cautare
+    }
+    
+    return render(request, 'main/chat_inbox.html', context)

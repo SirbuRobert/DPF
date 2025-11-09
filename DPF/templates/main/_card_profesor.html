@@ -1,0 +1,22 @@
+<div class="col">
+    <div class="card h-100 {{ card_style }}">
+        <div class="card-body">
+            <h5 class="card-title">{{ prof_profile.user.first_name }} {{ prof_profile.user.last_name }}</h5>
+            <p class="card-text text-muted">
+                Materie Predată: **
+                {% if prof_profile.materie_predata %}
+                    {{ prof_profile.materie_predata.nume }} 
+                {% else %}
+                    Nespecificată
+                {% endif %}
+                **
+            </p>
+            <p class="card-text"><small class="text-secondary">E-mail: {{ prof_profile.user.email }}</small></p>
+            {% if is_elev %}
+                <a href="{% url 'chat' destinatar_id=prof_profile.user.id %}" class="btn {% if card_style == "shadow-sm border-primary" %}btn-primary{% else %}btn-outline-primary{% endif %} mt-2" role="button">
+                    <i class="fas fa-envelope"></i> Trimite Mesaj
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>

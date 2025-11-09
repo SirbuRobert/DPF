@@ -1,7 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="ro">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -9,56 +8,62 @@
   <link rel="stylesheet" href="{% static 'main/css/site.css' %}">
   {% block extra_head %}{% endblock %}
 </head>
-
 <body>
 
-  <header class="header">
-    <div class="header-inner container">
-      <div class="header-logo-group">
-        <div class="logo-icon"><span class="logo-symbol">👾</span></div>
-        <a href="{% url 'home' %}" class="brand-link">Titlu lung</a>
-      </div>
+<header class="header">
+  <div class="header-inner container">
+    <div class="header-logo-group">
+      <div class="logo-icon"><span class="logo-symbol">👾</span></div>
+      <a href="{% url 'home' %}" class="brand-link">Titlu lung</a>
+    </div>
 
-      <nav class="header-nav">
-        {% if user.is_authenticated %}
+    <nav class="header-nav">
+      {% if user.is_authenticated %}
         <a href="{% url 'profil' %}">Profil</a>
         <a href="{% url 'materii' %}">Materii</a>
-        <a href="{% url 'profesori' %}">Profesori</a>
+        <a href="{% url 'chat_inbox' %}">Mesagerie</a>
+        
+        <a href="{% url 'profesori' %}">
+            {% if user.rol == 'ELEV' %}
+                Profesori
+            {% else %}
+                Elevi
+            {% endif %}
+        </a>
         <a href="{% url 'logout' %}" class="btn btn--light">Deconectare</a>
-        {% else %}
+      {% else %}
         <a href="#" aria-disabled="true">Contact</a>
         <a href="{% url 'login' %}" class="btn btn--light">Login</a>
-        {% endif %}
-      </nav>
-    </div>
-  </header>
+      {% endif %}
+    </nav>
+  </div>
+</header>
 
-  <main class="page container">
-    {% if messages %}
+<main class="page container">
+  {% if messages %}
     <ul class="messages">
       {% for message in messages %}
-      <li class="msg {{ message.tags }}">{{ message }}</li>
+        <li class="msg {{ message.tags }}">{{ message }}</li>
       {% endfor %}
     </ul>
-    {% endif %}
+  {% endif %}
 
-    {% block content %}{% endblock %}
-  </main>
+  {% block content %}{% endblock %}
+</main>
 
-  <footer class="site-footer">
-    <div class="footer-container">
-      <div class="container footer-grid">
-        <div>
-          <h3>CONTACTEAZĂ-NE:</h3>
-          <p><strong>Telefon:</strong> 077777777</p>
-          <p><strong>E-mail:</strong> test@test.test</p>
-          <p><strong>Adresa:</strong> liceul tău strada număr chestii</p>
-        </div>
-      </div>
+<footer class="site-footer">
+    <div class = "footer-container">
+  <div class="container footer-grid">
+    <div>
+      <h3>CONTACTEAZĂ-NE:</h3>
+      <p><strong>Telefon:</strong> 077777777</p>
+      <p><strong>E-mail:</strong> test@test.test</p>
+      <p><strong>Adresa:</strong> liceul tău strada număr chestii</p>
     </div>
-  </footer>
+  </div>
+    </div>
+</footer>
 
-  {% block extra_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
 </body>
-
 </html>
