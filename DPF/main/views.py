@@ -351,6 +351,17 @@ def lectie_ai_view(request, lectie_id: int):
         try: os.unlink(tmp_path)
         except OSError: pass
 
+    quiz_raw = result.get("quiz_results") or []
+
+    # normalize keys
+    quiz = []
+    for item in quiz_raw:
+        quiz.append({
+            **item,
+            "question": item.get("question") or item.get("question_text") or "",
+            "answer": item.get("answer") or item.get("answer_text") or "",
+        })
+
     if not result:
         return render(request, "main/lectie_ai.html", {
             "lectie": lectie,
@@ -361,7 +372,7 @@ def lectie_ai_view(request, lectie_id: int):
     return render(request, "main/lectie_ai.html", {
         "lectie": lectie,
         "material": material,
-        "summary": result["final_summary"],
-        "quiz": result["quiz_results"],
+        "summary": result.get("final_summary", ""),
+        "quiz": quiz,  # <— normalized
         "lang": result.get("original_lang", "en"),
     })
