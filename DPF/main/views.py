@@ -151,20 +151,32 @@ def profil_view(request):
     return render(request, 'main/profil.html', {})
 
 @login_required
+@login_required
 def materii_view(request):
     context = {}
     try:
         if request.user.rol == User.Rol.ELEV:
             an_elev = request.user.elev_profile.an_studiu
-            materiale = MaterialDidactic.objects.filter(an_studiu=an_elev)
-            context['materiale'] = materiale
+            materiale = (
+                MaterialDidactic.objects
+                .select_related("lectie", "lectie__materie", "autor")
+                .filter(lectie__an_studiu=an_elev)            # <-- HERE
+                .order_by("-data_adaugarii")
+            )
+            context["materiale"] = materiale
+
         elif request.user.rol == User.Rol.PROFESOR:
-            materiale = MaterialDidactic.objects.filter(autor=request.user)
-            context['materiale'] = materiale
+            materiale = (
+                MaterialDidactic.objects
+                .select_related("lectie", "lectie__materie", "autor")
+                .filter(autor=request.user)
+                .order_by("-data_adaugarii")
+            )
+            context["materiale"] = materiale
     except (ElevProfile.DoesNotExist, ProfesorProfile.DoesNotExist):
         pass
 
-    return render(request, 'main/materii.html', context)
+    return render(request, "main/materii.html", context)
 
 
 # --- 6. View-ul pentru Import Elevi (din interfața web) ---
