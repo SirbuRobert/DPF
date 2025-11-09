@@ -18,7 +18,7 @@ TRANSLATION_BACK_MODEL_NAME = "Helsinki-NLP/opus-mt-en-mul"
 
 # Hyperparametri T5
 MAX_SRC_LEN_SUMM = 1024
-MAX_SRC_LEN_QUIZ = 384
+MAX_SRC_LEN_QUIZ = 196
 MAX_TARGET_LEN_QUIZ = 96
 
 # Setare Dispozitiv
@@ -46,19 +46,8 @@ def load_model_components():
     
     # --- Încărcare Modele de Rezumare ---
     try:
-        MODEL_NAME = "google-t5/t5-large"  # or your fine-tuned checkpoint path
-
-        tok_summ = AutoTokenizer.from_pretrained(
-            MODEL_NAME,
-            use_fast=True,
-            model_max_length=1024,  # = MAX_INPUT_LEN from your config
-            padding_side="right",
-            truncation_side="right",
-        )
-        model_summ = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(device)
-
-        #tok_summ = AutoTokenizer.from_pretrained(SUMM_MODEL_PATH)
-        #model_summ = AutoModelForSeq2SeqLM.from_pretrained(SUMM_MODEL_PATH).to(device)
+        tok_summ = AutoTokenizer.from_pretrained(SUMM_MODEL_PATH)
+        model_summ = AutoModelForSeq2SeqLM.from_pretrained(SUMM_MODEL_PATH).to(device)
         model_summ.eval()
         models['summarize'] = True
     except Exception as e:
@@ -254,7 +243,7 @@ def run_full_pipeline(input_file_path: str, num_questions: int, max_tokens_summ:
         return None
 
     # --- PASUL 1: DETECTARE ȘI TRADUCERE ÎNAINTE ---
-    translated_text_for_processing = detect_and_translate(original_text)
+    translated_text_for_processing = "summarize: " + original_text
     
     # 2. Rezumare
     summarized_results_en = summarize(translated_text_for_processing, max_tokens_summ, num_beams_summ)
@@ -265,9 +254,10 @@ def run_full_pipeline(input_file_path: str, num_questions: int, max_tokens_summ:
 
     # --- PASUL 4: TRADUCERE ÎNAPOI (POST-PROCESARE) ---
     
-    final_results = quiz_list_en
+    final_results = quiz_list_en[:3]
     final_summary_ro = final_summary_en
 
+    """
     if ORIGINAL_LANG != 'en' and models.get('translate_back'):
         # Logica de traducere înapoi (folosind datele EN)
         strings_to_translate = [final_summary_en]
@@ -295,7 +285,7 @@ def run_full_pipeline(input_file_path: str, num_questions: int, max_tokens_summ:
     else:
         # Nu a fost nevoie de traducere
         pass
-
+    """
     # 7. Returnează un dicționar cu toate datele necesare (Vizibil în views.py)
     return {
         'quiz_results': final_results,
@@ -308,7 +298,7 @@ if __name__ == '__main__':
     # ... (Blocul de execuție) ...
     FILE_PATH_INPUT = "input.txt"
     FILE_PATH_OUTPUT = 'output.txt'
-    QUESTION_COUNT = 7      
+    QUESTION_COUNT = 3
     MAX_TOKENS_SUMMARY = 150
 
     with open(FILE_PATH_INPUT, encoding='utf-8') as input_file:
