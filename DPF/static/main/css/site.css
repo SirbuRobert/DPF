@@ -37,7 +37,7 @@ a{color:inherit;text-decoration:none}
 .header-nav a{color:#fff;opacity:.95}
 .header-nav a:hover{opacity:1;text-decoration:underline}
 .btn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 .9rem;border-radius:10px;font-weight:700}
-.btn--light{background:#fff;color:var(--primary)}
+.btn--light{background:var(--primary-dark);color:var(--primary)}
 .btn--primary{background:var(--primary);color:#fff}
 .btn--primary:hover{filter:brightness(1.06)}
 
