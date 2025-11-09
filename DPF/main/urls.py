@@ -12,4 +12,5 @@ urlpatterns = [
     path('import_elevi/', views.import_elevi_view, name='import_elevi'),
     path('profil/', views.profil_view, name='profil'),
     path('profesori/', views.profesori_view, name='profesori'), 
+    path('chat/<int:destinatar_id>/', views.chat_view, name='chat'),
 ]

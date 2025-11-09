@@ -12,9 +12,8 @@ from django.contrib.admin.views.decorators import staff_member_required # Import
 from django.db import transaction
 from django import forms # Necesar pentru 'raise forms.ValidationError'
 from Ai.ai_pipeline import run_full_pipeline  # adjust import
-
-# Importăm Modelele
-from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie
+from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie, Mesaj # Adaugă Mesaj
+from django.db.models import Q # Asigură-te că Q este importat
 
 # Importăm Formularele
 from .forms import (
@@ -420,3 +419,33 @@ def profesori_view(request):
         'is_elev': is_elev, 
     }
     return render(request, 'main/profesori.html', context)
+
+@login_required
+def chat_view(request, destinatar_id):
+    expeditor = request.user
+    destinatar = get_object_or_404(User, pk=destinatar_id)
+
+    # Filtrăm mesajele care sunt fie (Expeditor -> Destinatar) SAU (Destinatar -> Expeditor)
+    mesaje = Mesaj.objects.filter(
+        Q(expeditor=expeditor, destinatar=destinatar) | 
+        Q(expeditor=destinatar, destinatar=expeditor)
+    ).order_by('data_trimitere')
+
+    if request.method == 'POST':
+        continut = request.POST.get('continut')
+        if continut and continut.strip():
+            # Crează și salvează noul mesaj
+            Mesaj.objects.create(
+                expeditor=expeditor,
+                destinatar=destinatar,
+                continut=continut.strip()
+            )
+            # Redirecționăm pentru a preveni re-trimiterea mesajului la refresh (POST/REDIRECT/GET)
+            return redirect('chat', destinatar_id=destinatar_id)
+        
+    context = {
+        'destinatar': destinatar,
+        'mesaje': mesaje,
+    }
+
+    return render(request, 'main/chat.html', context)
