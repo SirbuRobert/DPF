@@ -3,7 +3,10 @@ import json
 import os
 import tempfile
 import re
+from pathlib import Path
+
 from PyPDF2 import PdfReader
+from django.core.exceptions import ImproperlyConfigured
 from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
@@ -18,8 +21,11 @@ from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie
 from django.db.models import Q, Count, Max  # Asigură-te că Q este importat
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-
+from dotenv import load_dotenv
 from openai import OpenAI
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
 # Importăm Formularele
@@ -520,7 +526,12 @@ def api_summarize_selection(request):
         cod_quiz = "Oferă un răspuns scurt și clar bazat pe selecția de mai jos."
 
     # choose the token (API key): prefer per-user stored key, fallback to settings
-    api_key = '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'
+    def env_required(name: str) -> str:
+        val = os.getenv(name)
+        if not val:
+            raise ImproperlyConfigured(f"Missing required environment variable: {name}")
+        return val
+    api_key = env_required("MY_API_KEY")
     if not api_key:
         return JsonResponse({"error": "Cheia OpenAI nu este configurată pe server."}, status=500)
 
