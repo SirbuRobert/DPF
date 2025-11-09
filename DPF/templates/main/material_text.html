@@ -44,7 +44,7 @@
 
 <div id="ai-summary-panel" class="ai-panel" style="display:none;">
   <header>
-    <span>Rezumat selecție</span>
+    <span>Explicație pe stilul tau</span>
     <button class="close" type="button" aria-label="Închide">×</button>
   </header>
   <div class="content">Se încarcă…</div>
@@ -59,7 +59,7 @@
   const bubble = document.createElement('button');
   bubble.className = 'ai-bubble';
   bubble.type = 'button';
-  bubble.textContent = 'Rezumă selecția';
+  bubble.textContent = 'Explică pe stilul meu';
   document.body.appendChild(bubble);
 
   const panel = document.getElementById('ai-summary-panel');
@@ -134,7 +134,7 @@
     } catch (err) {
       panelContent.textContent = (err && err.message) ? err.message : 'A apărut o eroare.';
     } finally {
-      bubble.disabled = false; bubble.textContent = 'Rezumă selecția';
+      bubble.disabled = false; bubble.textContent = 'Explică pe stilul meu';
     }
   });
 })();

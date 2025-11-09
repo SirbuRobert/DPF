@@ -485,11 +485,40 @@ def api_summarize_selection(request):
     if not raw_text:
         return JsonResponse({"error": "Lipsește textul de rezumat."}, status=400)
 
+    def _get_nested(obj, path: str):
+        cur = obj
+        for part in path.split("."):
+            cur = getattr(cur, part, None)
+            if cur is None:
+                return None
+        return cur
+
+    def _get_user_cod_quiz(user) -> str | None:
+        # Adjust these to match where you store it
+        candidates = [
+            "cod_quiz",
+            "quiz_string",
+            "prompt_hint",
+            "elev_profile.cod_quiz",
+            "profesor_profile.cod_quiz",
+            "profile.cod_quiz",
+        ]
+        for path in candidates:
+            val = _get_nested(user, path)
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+        return None
+
     # keep request small
     text = _shorten(raw_text, max_chars=8000)
 
+    cod_quiz = _get_user_cod_quiz(request.user)
+    if not cod_quiz:
+        # Fallback instruction if the user hasn’t set one
+        cod_quiz = "Oferă un răspuns scurt și clar bazat pe selecția de mai jos."
+
     # choose the token (API key): prefer per-user stored key, fallback to settings
-    api_key = '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'
+    api_key = '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'
     if not api_key:
         return JsonResponse({"error": "Cheia OpenAI nu este configurată pe server."}, status=500)
 
@@ -499,13 +528,16 @@ def api_summarize_selection(request):
         client = OpenAI(api_key=api_key)
 
         system_msg = (
-            "You are a helpful assistant that writes short, faithful summaries. "
+            "You are a helpful assistant that writes short, faithful explanations. "
             "Keep key terms, equations, and definitions; remove fluff. "
             "Length: ~4-6 concise bullet points or 3-5 sentences. "
             f"Language: {'Romanian' if locale.startswith('ro') else 'English'}."
         )
 
-        user_msg = f"Summarize the following selection:\n\n{text}"
+        user_msg = (
+            f"{cod_quiz}\n\n"
+            f"<text>\n{text}\n</text>"
+        )
 
         # fast + affordable model; adjust to your account
         completion = client.chat.completions.create(

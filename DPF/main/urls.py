@@ -13,7 +13,6 @@ urlpatterns = [
     path("lectii/<int:lectie_id>/ai/", views.lectie_ai_view, name="lectie_ai"),
     path("material/<int:pk>/", views.material_text_view, name="material_text"),
     path("api/summarize-selection/", views.api_summarize_selection, name="api_summarize_selection"),
-
     path('lectie_ai/<int:lectie_id>/', views.lectie_ai_view, name='lectie_ai'),
     path('quiz/', views.quiz_view, name='quiz'),
     path('import_elevi/', views.import_elevi_view, name='import_elevi'),
