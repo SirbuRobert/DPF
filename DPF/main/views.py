@@ -15,7 +15,7 @@ from django.db import transaction
 from django import forms # Necesar pentru 'raise forms.ValidationError'
 from Ai.ai_pipeline import run_full_pipeline  # adjust import
 from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie, Mesaj # Adaugă Mesaj
-from django.db.models import Q # Asigură-te că Q este importat
+from django.db.models import Q, Count, Max  # Asigură-te că Q este importat
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
