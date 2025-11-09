@@ -13,4 +13,5 @@ urlpatterns = [
     path('profil/', views.profil_view, name='profil'),
     path('profesori/', views.profesori_view, name='profesori'), 
     path('chat/<int:destinatar_id>/', views.chat_view, name='chat'),
+    path('chat/ajax/<int:destinatar_id>/', views.get_messages_ajax_view, name='chat_ajax_messages'), 
 ]

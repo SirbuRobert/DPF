@@ -14,6 +14,7 @@ from django import forms # Necesar pentru 'raise forms.ValidationError'
 from Ai.ai_pipeline import run_full_pipeline  # adjust import
 from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie, Mesaj # Adaugă Mesaj
 from django.db.models import Q # Asigură-te că Q este importat
+from django.http import HttpResponse
 
 # Importăm Formularele
 from .forms import (
@@ -449,3 +450,24 @@ def chat_view(request, destinatar_id):
     }
 
     return render(request, 'main/chat.html', context)
+
+@login_required
+def get_messages_ajax_view(request, destinatar_id):
+    """
+    Returnează fragmentul HTML cu mesajele actuale pentru a fi folosit de AJAX.
+    """
+    expeditor = request.user
+    destinatar = get_object_or_404(User, pk=destinatar_id)
+
+    # Aceeași logică de filtrare ca în chat_view
+    mesaje = Mesaj.objects.filter(
+        Q(expeditor=expeditor, destinatar=destinatar) | 
+        Q(expeditor=destinatar, destinatar=expeditor)
+    ).order_by('data_trimitere')
+
+    # Rendăm doar fragmentul de șablon care conține mesajele
+    return render(request, 'main/_chat_messages.html', {
+        'mesaje': mesaje,
+        'destinatar': destinatar,
+        'user': request.user # Trecem user-ul pentru a determina expeditorul în șablon
+    })
