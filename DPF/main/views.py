@@ -152,7 +152,42 @@ def logout_view(request):
 # --- 5. View-uri Stub (pe care le vei dezvolta) ---
 @login_required
 def profil_view(request):
-    return render(request, 'main/profil.html', {})
+    user = request.user
+    elev_profile = None
+    profesor_profile = None
+    cod_quiz_completat = False
+
+    # În funcție de rolul userului, luăm profilul corect
+    if user.rol == User.Rol.ELEV:
+        try:
+            elev_profile = ElevProfile.objects.get(user=user)
+            cod_quiz_completat = bool(elev_profile.cod_quiz)
+        except ElevProfile.DoesNotExist:
+            pass
+
+    elif user.rol == User.Rol.PROFESOR:
+        try:
+            profesor_profile = ProfesorProfile.objects.get(user=user)
+        except ProfesorProfile.DoesNotExist:
+            pass
+
+    context = {
+        'user': user,
+        'elev_profile': elev_profile,
+        'profesor_profile': profesor_profile,
+        'cod_quiz_completat': cod_quiz_completat,
+    }
+
+    if request.method == 'POST' and 'poza_profil' in request.FILES:
+        elev_profile.poza_profil = request.FILES['poza_profil']
+        elev_profile.save()
+        messages.success(request, "Poza a fost actualizată cu succes!")
+        return redirect('profil')
+
+
+    return render(request, 'main/profil.html', context)
+
+    
 
 @login_required
 @login_required
@@ -351,6 +386,17 @@ def lectie_ai_view(request, lectie_id: int):
         try: os.unlink(tmp_path)
         except OSError: pass
 
+    quiz_raw = result.get("quiz_results") or []
+
+    # normalize keys
+    quiz = []
+    for item in quiz_raw:
+        quiz.append({
+            **item,
+            "question": item.get("question") or item.get("question_text") or "",
+            "answer": item.get("answer") or item.get("answer_text") or "",
+        })
+
     if not result:
         return render(request, "main/lectie_ai.html", {
             "lectie": lectie,
@@ -361,8 +407,8 @@ def lectie_ai_view(request, lectie_id: int):
     return render(request, "main/lectie_ai.html", {
         "lectie": lectie,
         "material": material,
-        "summary": result["final_summary"],
-        "quiz": result["quiz_results"],
+        "summary": result.get("final_summary", ""),
+        "quiz": quiz,  # <— normalized
         "lang": result.get("original_lang", "en"),
     })
 

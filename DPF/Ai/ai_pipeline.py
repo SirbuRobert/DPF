@@ -12,7 +12,7 @@ AI_MODULE_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Căi de model calculate (ESENȚIAL pentru rezolvarea erorii Repo ID)
 QUIZ_MODEL_PATH = os.path.join(AI_MODULE_BASE_DIR, "quiz_model")          
-SUMM_MODEL_PATH = os.path.join(AI_MODULE_BASE_DIR, "t5_small_summarizer")
+SUMM_MODEL_PATH = os.path.join(AI_MODULE_BASE_DIR, "t5-large")
 TRANSLATION_MODEL_NAME = "Helsinki-NLP/opus-mt-mul-en"
 TRANSLATION_BACK_MODEL_NAME = "Helsinki-NLP/opus-mt-en-mul" 
 
@@ -315,6 +315,8 @@ if __name__ == '__main__':
         print(f"Rezumat: {result['final_summary']}")
         print(f"Întrebări: {len(result['quiz_results'])}")
         print(f"Întrebări: {result['quiz_results']}")
+        for i, qa in enumerate(result['quiz_results'], 1):
+            print(f"Q{i}: {qa['question']} | A: {qa['answer']}")
 
     except Exception as e:
         print(f"\nO eroare majoră a intervenit în execuția pipeline-ului: {e}")

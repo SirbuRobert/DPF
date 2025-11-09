@@ -14,13 +14,15 @@
     <h2 class="h3" style="margin-top:1rem;">Întrebări generate</h2>
     {% if quiz %}
       <ol class="quiz-list">
-        {% for q in quiz %}
-          <li class="quiz-item">
-            <div class="q">Q: {{ q.question|default:q.question_text }}</div>
-            <div class="a muted">R: {{ q.answer }}</div>
-          </li>
-        {% endfor %}
-      </ol>
+          {% for q in quiz %}
+            <li class="quiz-item">
+              <div class="q">Q: {{ q.question|default:"(fără întrebare)" }}</div>
+              <div class="a muted">R: {{ q.answer|default:"(fără răspuns)" }}</div>
+            </li>
+          {% empty %}
+            <li class="muted">Nu s-au generat întrebări.</li>
+          {% endfor %}
+        </ol>
     {% else %}
       <p class="muted">Nu s-au putut genera întrebări.</p>
     {% endif %}
