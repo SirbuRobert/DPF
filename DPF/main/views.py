@@ -12,9 +12,9 @@ from django.contrib.admin.views.decorators import staff_member_required # Import
 from django.db import transaction
 from django import forms # Necesar pentru 'raise forms.ValidationError'
 from Ai.ai_pipeline import run_full_pipeline  # adjust import
-
-# Importăm Modelele
-from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie
+from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie, Mesaj # Adaugă Mesaj
+from django.db.models import Q # Asigură-te că Q este importat
+from django.http import HttpResponse
 
 # Importăm Formularele
 from .forms import (
@@ -410,4 +410,110 @@ def lectie_ai_view(request, lectie_id: int):
         "summary": result.get("final_summary", ""),
         "quiz": quiz,  # <— normalized
         "lang": result.get("original_lang", "en"),
+    })
+
+@login_required
+def profesori_view(request):
+    """
+    Afișează toți profesorii. Pentru elevi, îi sortează pe:
+    1. Profesorii de la clasa lor (cei care au adăugat materiale pentru lecțiile clasei lor).
+    2. Restul profesorilor.
+    """
+    
+    # 1. Obține toți utilizatorii care sunt profesori, preluând Materia dintr-un singur query
+    profesori_qs = (
+        ProfesorProfile.objects
+        .select_related('user', 'materie_predata')
+        .filter(user__rol=User.Rol.PROFESOR)
+        .order_by('user__last_name', 'user__first_name')
+    )
+    
+    profesori_la_clasa = []
+    # Lista de bază, cu toți profesorii
+    restul_profesorilor = list(profesori_qs) 
+
+    # Verifică dacă utilizatorul curent este elev
+    is_elev = request.user.rol == User.Rol.ELEV
+
+    if is_elev:
+        try:
+            # Accesăm profilul elevului prin relația one-to-one
+            elev_profile = request.user.elev_profile
+            an_studiu = elev_profile.an_studiu
+
+            # Găsim ID-urile de user ale profesorilor care au încărcat materiale pentru acest an de studiu
+            profesori_relevanti_ids = MaterialDidactic.objects.filter(
+                lectie__an_studiu=an_studiu
+            ).values_list('autor_id', flat=True).distinct()
+            
+            profesori_la_clasa = []
+            restul_profesorilor = []
+            
+            # Separăm profesorii
+            for prof_profile in profesori_qs:
+                if prof_profile.user.id in profesori_relevanti_ids:
+                    profesori_la_clasa.append(prof_profile)
+                else:
+                    restul_profesorilor.append(prof_profile)
+                    
+        except ElevProfile.DoesNotExist:
+            # Dacă elevul nu are profil, tratăm ca pe orice alt utilizator (listă completă nesortată)
+            pass
+            
+    context = {
+        'profesori_la_clasa': profesori_la_clasa,
+        'restul_profesorilor': restul_profesorilor,
+        'is_elev': is_elev, 
+    }
+    return render(request, 'main/profesori.html', context)
+
+@login_required
+def chat_view(request, destinatar_id):
+    expeditor = request.user
+    destinatar = get_object_or_404(User, pk=destinatar_id)
+
+    # Filtrăm mesajele care sunt fie (Expeditor -> Destinatar) SAU (Destinatar -> Expeditor)
+    mesaje = Mesaj.objects.filter(
+        Q(expeditor=expeditor, destinatar=destinatar) | 
+        Q(expeditor=destinatar, destinatar=expeditor)
+    ).order_by('data_trimitere')
+
+    if request.method == 'POST':
+        continut = request.POST.get('continut')
+        if continut and continut.strip():
+            # Crează și salvează noul mesaj
+            Mesaj.objects.create(
+                expeditor=expeditor,
+                destinatar=destinatar,
+                continut=continut.strip()
+            )
+            # Redirecționăm pentru a preveni re-trimiterea mesajului la refresh (POST/REDIRECT/GET)
+            return redirect('chat', destinatar_id=destinatar_id)
+        
+    context = {
+        'destinatar': destinatar,
+        'mesaje': mesaje,
+    }
+
+    return render(request, 'main/chat.html', context)
+
+@login_required
+def get_messages_ajax_view(request, destinatar_id):
+    """
+    Returnează fragmentul HTML cu mesajele actuale pentru a fi folosit de AJAX.
+    """
+    expeditor = request.user
+    destinatar = get_object_or_404(User, pk=destinatar_id)
+
+    # Aceeași logică de filtrare ca în chat_view
+    mesaje = Mesaj.objects.filter(
+        Q(expeditor=expeditor, destinatar=destinatar) | 
+        Q(expeditor=destinatar, destinatar=expeditor)
+    ).order_by('data_trimitere')
+
+    # Rendăm doar fragmentul de șablon care conține mesajele
+    return render(request, 'main/_chat_messages.html', {
+        'mesaje': mesaje,
+        'destinatar': destinatar,
+        'user': request.user # Trecem user-ul pentru a determina expeditorul în șablon
     })
