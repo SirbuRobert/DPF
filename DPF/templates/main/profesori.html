@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profesori{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Lista Profesorilor</h1>
+    
+    {% if is_elev %}
+        {% if profesori_la_clasa %}
+            <h2 class="h4 border-bottom pb-2 mb-3 text-primary">Profesorii care predau la clasa ta</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+                {% for prof_profile in profesori_la_clasa %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ prof_profile.user.first_name }} {{ prof_profile.user.last_name }}</h5>
+                                <p class="card-text text-muted">
+                                    Materie Predată: **
+                                    {% if prof_profile.materie_predata %}
+                                        {{ prof_profile.materie_predata.nume }} 
+                                    {% else %}
+                                        Nespecificată
+                                    {% endif %}
+                                    **
+                                </p>
+                                <p class="card-text"><small class="text-secondary">E-mail: {{ prof_profile.user.email }}</small></p>
+                                <a href="#" class="btn btn-primary mt-2 disabled" role="button" aria-disabled="true" title="Chat-ul va fi implementat curând!">
+                                    <i class="fas fa-envelope"></i> Trimite Mesaj
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="alert alert-warning">Nu am putut identifica profesorii care predau exact la clasa ta pe baza materialelor încărcate.</p>
+        {% endif %}
+
+        <h2 class="h4 border-bottom pb-2 mb-3">Restul Profesorilor din liceu</h2>
+    {% else %}
+        <h2 class="h4 border-bottom pb-2 mb-3">Toți Profesorii din liceu</h2>
+    {% endif %}
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for prof_profile in restul_profesorilor %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ prof_profile.user.first_name }} {{ prof_profile.user.last_name }}</h5>
+                        <p class="card-text text-muted">
+                            Materie Predată: 
+                            {% if prof_profile.materie_predata %}
+                                {{ prof_profile.materie_predata.nume }} 
+                            {% else %}
+                                Nespecificată
+                            {% endif %}
+                            **
+                        </p>
+                        <p class="card-text"><small class="text-secondary">E-mail: {{ prof_profile.user.email }}</small></p>
+                        {% if is_elev %}
+                            <a href="#" class="btn btn-outline-primary mt-2 disabled" role="button" aria-disabled="true" title="Chat-ul va fi implementat curând!">
+                                <i class="fas fa-envelope"></i> Trimite Mesaj
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock content %}

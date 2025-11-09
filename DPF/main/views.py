@@ -365,3 +365,58 @@ def lectie_ai_view(request, lectie_id: int):
         "quiz": result["quiz_results"],
         "lang": result.get("original_lang", "en"),
     })
+
+@login_required
+def profesori_view(request):
+    """
+    Afișează toți profesorii. Pentru elevi, îi sortează pe:
+    1. Profesorii de la clasa lor (cei care au adăugat materiale pentru lecțiile clasei lor).
+    2. Restul profesorilor.
+    """
+    
+    # 1. Obține toți utilizatorii care sunt profesori, preluând Materia dintr-un singur query
+    profesori_qs = (
+        ProfesorProfile.objects
+        .select_related('user', 'materie_predata')
+        .filter(user__rol=User.Rol.PROFESOR)
+        .order_by('user__last_name', 'user__first_name')
+    )
+    
+    profesori_la_clasa = []
+    # Lista de bază, cu toți profesorii
+    restul_profesorilor = list(profesori_qs) 
+
+    # Verifică dacă utilizatorul curent este elev
+    is_elev = request.user.rol == User.Rol.ELEV
+
+    if is_elev:
+        try:
+            # Accesăm profilul elevului prin relația one-to-one
+            elev_profile = request.user.elev_profile
+            an_studiu = elev_profile.an_studiu
+
+            # Găsim ID-urile de user ale profesorilor care au încărcat materiale pentru acest an de studiu
+            profesori_relevanti_ids = MaterialDidactic.objects.filter(
+                lectie__an_studiu=an_studiu
+            ).values_list('autor_id', flat=True).distinct()
+            
+            profesori_la_clasa = []
+            restul_profesorilor = []
+            
+            # Separăm profesorii
+            for prof_profile in profesori_qs:
+                if prof_profile.user.id in profesori_relevanti_ids:
+                    profesori_la_clasa.append(prof_profile)
+                else:
+                    restul_profesorilor.append(prof_profile)
+                    
+        except ElevProfile.DoesNotExist:
+            # Dacă elevul nu are profil, tratăm ca pe orice alt utilizator (listă completă nesortată)
+            pass
+            
+    context = {
+        'profesori_la_clasa': profesori_la_clasa,
+        'restul_profesorilor': restul_profesorilor,
+        'is_elev': is_elev, 
+    }
+    return render(request, 'main/profesori.html', context)
