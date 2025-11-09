@@ -58,7 +58,7 @@ def home_view(request):
         try:
             if request.user.rol == User.Rol.ELEV:
                 an_elev = request.user.elev_profile.an_studiu
-                materiale = MaterialDidactic.objects.filter(an_studiu=an_elev).order_by('-data_adaugarii')[:5]
+                materiale = MaterialDidactic.objects.filter(lectie__an_studiu=an_elev).order_by('-data_adaugarii')[:5]
                 context['materiale_recente'] = materiale
                 
             elif request.user.rol == User.Rol.PROFESOR:
@@ -151,20 +151,32 @@ def profil_view(request):
     return render(request, 'main/profil.html', {})
 
 @login_required
+@login_required
 def materii_view(request):
     context = {}
     try:
         if request.user.rol == User.Rol.ELEV:
             an_elev = request.user.elev_profile.an_studiu
-            materiale = MaterialDidactic.objects.filter(an_studiu=an_elev)
-            context['materiale'] = materiale
+            materiale = (
+                MaterialDidactic.objects
+                .select_related("lectie", "lectie__materie", "autor")
+                .filter(lectie__an_studiu=an_elev)            # <-- HERE
+                .order_by("-data_adaugarii")
+            )
+            context["materiale"] = materiale
+
         elif request.user.rol == User.Rol.PROFESOR:
-            materiale = MaterialDidactic.objects.filter(autor=request.user)
-            context['materiale'] = materiale
+            materiale = (
+                MaterialDidactic.objects
+                .select_related("lectie", "lectie__materie", "autor")
+                .filter(autor=request.user)
+                .order_by("-data_adaugarii")
+            )
+            context["materiale"] = materiale
     except (ElevProfile.DoesNotExist, ProfesorProfile.DoesNotExist):
         pass
 
-    return render(request, 'main/materii.html', context)
+    return render(request, "main/materii.html", context)
 
 
 # --- 6. View-ul pentru Import Elevi (din interfața web) ---
@@ -285,6 +297,6 @@ def quiz_view(request):
         student.cod_quiz = cod_final
         student.save()
 
-        return render(request, 'main/rezultat.html', {'cod': cod_final})
+        return render(request, 'main/quiz.html', {'cod': cod_final, 'quiz': quiz})
 
     return render(request, 'main/quiz.html', {'quiz': quiz})
