@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista Utilizatorilor{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    
+    {% if lista_tip == 'PROFESORI' %}
+        <h1 class="mb-4">Lista Profesorilor</h1>
+        
+        {% if profesori_la_clasa %}
+            <h2 class="h4 border-bottom pb-2 mb-3 text-primary">Profesorii care predau la clasa ta</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+                {% for prof_profile in profesori_la_clasa %}
+                    {% include "main/_card_profesor.html" with prof_profile=prof_profile is_elev=True card_style="shadow-sm border-primary" %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <h2 class="h4 border-bottom pb-2 mb-3">Restul Profesorilor din liceu</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for prof_profile in restul_profesorilor %}
+                 {% include "main/_card_profesor.html" with prof_profile=prof_profile is_elev=True card_style="shadow-sm" %}
+            {% endfor %}
+        </div>
+        
+    {% elif lista_tip == 'ELEVI' %}
+        <h1 class="mb-4">Lista Elevilor</h1>
+        
+        {% if elevi_la_clasele_mele %}
+            <h2 class="h4 border-bottom pb-2 mb-3 text-primary">Elevii din clasele la care predați</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+                {% for elev_profile in elevi_la_clasele_mele %}
+                    {% include "main/_card_elev.html" with elev_profile=elev_profile is_profesor=True card_style="shadow-sm border-primary" %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <h2 class="h4 border-bottom pb-2 mb-3">Restul Elevilor din liceu</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for elev_profile in restul_elevilor %}
+                {% include "main/_card_elev.html" with elev_profile=elev_profile is_profesor=True card_style="shadow-sm" %}
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <p class="alert alert-warning">Nu aveți permisiunea de a accesa această pagină sau rolul dvs. nu este definit.</p>
+    {% endif %}
+
+</div>
+{% endblock content %}

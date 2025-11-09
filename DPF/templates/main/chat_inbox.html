@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mesagerie Privată{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">📧 Mesageria Mea</h1>
+    
+    <div class="card p-3 mb-4 shadow-sm">
+        <form method="GET" action="{% url 'chat_inbox' %}" class="d-flex">
+            <input type="search" name="q" class="form-control me-2" placeholder="Caută utilizatori după nume sau username..." 
+                   aria-label="Căutare" value="{{ termen_cautare|default:'' }}">
+            <button class="btn btn-primary" type="submit">Căutare</button>
+        </form>
+    </div>
+
+    {% if termen_cautare and not utilizatori_gasiti and not conversatii_recente %}
+        <p class="alert alert-warning">Niciun rezultat găsit pentru "{{ termen_cautare }}" și nicio conversație recentă.</p>
+    {% elif termen_cautare and utilizatori_gasiti %}
+        <h2 class="h4 border-bottom pb-2 mb-3">Rezultate Căutare pentru "{{ termen_cautare }}"</h2>
+        <div class="list-group mb-5">
+            {% for user_item in utilizatori_gasiti %}
+                <a href="{% url 'chat' destinatar_id=user_item.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    {{ user_item.first_name }} {{ user_item.last_name }} ({{ user_item.get_rol_display }})
+                    <span class="badge bg-success rounded-pill">Începe Chat</span>
+                </a>
+            {% empty %}
+                <p class="list-group-item">Nu au fost găsiți utilizatori.</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <h2 class="h4 border-bottom pb-2 mb-3">Conversații Recente</h2>
+    <div class="list-group">
+        {% for user_item in conversatii_recente %}
+            <a href="{% url 'chat' destinatar_id=user_item.id %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ user_item.first_name }} {{ user_item.last_name }}</h5>
+                    <small class="text-muted">{{ user_item.get_rol_display }}</small>
+                </div>
+                <p class="mb-1">Click pentru a relua conversația...</p>
+            </a>
+        {% empty %}
+            {% if not termen_cautare %}
+                <p class="alert alert-info">Nu ai nicio conversație recentă. Folosește bara de căutare de mai sus pentru a începe una.</p>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock content %}

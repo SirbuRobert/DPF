@@ -18,7 +18,8 @@ urlpatterns = [
     path('quiz/', views.quiz_view, name='quiz'),
     path('import_elevi/', views.import_elevi_view, name='import_elevi'),
     path('profil/', views.profil_view, name='profil'),
-    path('profesori/', views.profesori_view, name='profesori'),
-    path('chat/<int:destinatar_id>/', views.chat_view, name='chat'),
-    path('chat/ajax/<int:destinatar_id>/', views.get_messages_ajax_view, name='chat_ajax_messages'),
+    path('profesori/', views.profesori_view, name='profesori'), 
+    path('chat/', views.chat_inbox_view, name='chat_inbox'), # <-- ACEASTĂ LINIE NOUĂ TREBUIE SĂ EXISTE
+    path('chat/<int:destinatar_id>/', views.chat_view, name='chat'), 
+    path('chat/ajax/<int:destinatar_id>/', views.get_messages_ajax_view, name='chat_ajax_messages'), 
 ]

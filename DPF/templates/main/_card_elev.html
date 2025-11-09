@@ -1,0 +1,16 @@
+<div class="col">
+    <div class="card h-100 {{ card_style }}">
+        <div class="card-body">
+            <h5 class="card-title">{{ elev_profile.user.first_name }} {{ elev_profile.user.last_name }}</h5>
+            <p class="card-text text-muted">
+                Clasa: **{{ elev_profile.an_studiu }}{{ elev_profile.clasa_litera }}**
+            </p>
+            <p class="card-text"><small class="text-secondary">E-mail: {{ elev_profile.user.email }}</small></p>
+            {% if is_profesor %}
+                <a href="{% url 'chat' destinatar_id=elev_profile.user.id %}" class="btn {% if card_style == "shadow-sm border-primary" %}btn-primary{% else %}btn-outline-primary{% endif %} mt-2" role="button">
+                    <i class="fas fa-envelope"></i> Trimite Mesaj
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
