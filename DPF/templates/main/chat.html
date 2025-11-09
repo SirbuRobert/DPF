@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat cu {{ destinatar.first_name }} {{ destinatar.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <h1>Conversație cu {{ destinatar.first_name }} {{ destinatar.last_name }}</h1>
+        <a href="{% url 'profesori' %}" class="btn btn-secondary">Înapoi la profesori</a>
+    </div>
+
+    <div class="card p-4 shadow-sm">
+        <p class="text-info fw-bold">Mod Demo: Conversația se actualizează automat la fiecare 2 secunde (simulare "timp real").</p>
+
+        <div id="chat-window" class="chat-window border rounded p-3 mb-3" style="min-height: 300px; max-height: 50vh; overflow-y: auto; background-color: #f8f9fa;">
+            {% include 'main/_chat_messages.html' %}
+        </div>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="input-group">
+                <textarea name="continut" class="form-control" rows="2" placeholder="Scrie mesajul tău..." required></textarea>
+                <button type="submit" class="btn btn-success">Trimite</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    const chatWindow = document.getElementById('chat-window');
+    // Funcție pentru a menține scroll-ul jos
+    function scrollToBottom() {
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // Funcția care face cererea AJAX către server
+    function fetchNewMessages() {
+        const destinatarId = "{{ destinatar.id }}";
+        const url = "{% url 'chat_ajax_messages' destinatar_id=destinatar.id %}";
+
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                const currentScroll = chatWindow.scrollTop + chatWindow.clientHeight;
+                const isScrolledToBottom = chatWindow.scrollHeight - currentScroll < 20; // Aproximativ 20px buffer
+
+                // Înlocuiește conținutul ferestrei de chat cu noul HTML
+                chatWindow.innerHTML = html;
+
+                // Dacă utilizatorul era deja jos, menținem scroll-ul jos după actualizare
+                if (isScrolledToBottom) {
+                    scrollToBottom();
+                }
+            })
+            .catch(error => console.error('Eroare la actualizarea mesajelor:', error));
+    }
+
+    // Apelăm funcția la încărcare pentru a seta poziția de scroll
+    scrollToBottom();
+
+    // Setăm intervalul de Polling (actualizare la fiecare 2000ms = 2 secunde)
+    setInterval(fetchNewMessages, 2000); 
+</script>
+{% endblock extra_js %}

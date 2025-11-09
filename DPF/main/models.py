@@ -221,4 +221,32 @@ class MaterialDidactic(models.Model):
     def __str__(self):
         # Va afișa: "Primul Război Mondial - Rezumat.pdf"
         return f"{self.lectie.titlu} - {self.titlu}"
+
+class Mesaj(models.Model):
+    """
+    Stochează un singur mesaj trimis între doi utilizatori.
+    """
+    expeditor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='mesaje_trimise',
+        verbose_name="Expeditor"
+    )
+    destinatar = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='mesaje_primite',
+        verbose_name="Destinatar"
+    )
+    continut = models.TextField(verbose_name="Conținutul mesajului")
+    data_trimitere = models.DateTimeField(auto_now_add=True)
+    citit = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['data_trimitere']
+        verbose_name = "Mesaj"
+        verbose_name_plural = "Mesaje"
+
+    def __str__(self):
+        return f"De la {self.expeditor.username} către {self.destinatar.username} la {self.data_trimitere.strftime('%H:%M')}"
     
