@@ -9,5 +9,7 @@ urlpatterns = [
     path('import-elevi/', views.import_elevi_view, name='import_elevi'),
     path('quiz/',views.quiz_view, name='quiz'),
     path("lectii/<int:lectie_id>/ai/", views.lectie_ai_view, name="lectie_ai"),
+    path("material/<int:pk>/", views.material_text_view, name="material_text"),
+    path("api/summarize-selection/", views.api_summarize_selection, name="api_summarize_selection"),
 
 ]

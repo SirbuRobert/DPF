@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}{{ material.titlu }} — DPF{% endblock %}
+
+{% block content %}
+<section>
+  <h1 class="h2">{{ material.titlu }}</h1>
+
+  <div class="material-meta">
+    <span>{{ material.lectie.materie.nume }}</span> ·
+    <span>{{ material.data_adaugarii|date:"d.m.Y" }}</span>
+    {% if material.autor %} · <span>prof. {{ material.autor.get_full_name|default:material.autor.username }}</span>{% endif %}
+  </div>
+
+  <div class="material-actions" style="margin:1rem 0;">
+    <a class="btn btn--primary" href="{% url 'lectie_ai' material.lectie.pk %}">Generează rezumat &amp; quiz</a>
+    <a class="btn" href="{{ material.fisier.url }}" target="_blank" rel="noopener">Descarcă originalul</a>
+    <a class="btn" href="javascript:history.back()">Înapoi</a>
+  </div>
+
+  <article class="material-text"
+           style="white-space: pre-line; line-height: 1.6; background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1rem;">
+    {{ text }}
+  </article>
+<style>
+  .ai-bubble {
+    position: absolute; z-index: 50; display: none;
+    padding: .4rem .6rem; border-radius: .5rem; border: 1px solid #e5e7eb;
+    background: #111827; color: #fff; font-size: .9rem; cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,.08);
+  }
+  .ai-panel {
+    position: fixed; right: 1rem; bottom: 1rem; z-index: 40;
+    width: min(38rem, 92vw); max-height: 50vh; overflow: auto;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12);
+  }
+  .ai-panel header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .75rem 1rem; border-bottom: 1px solid #e5e7eb; font-weight: 600;
+  }
+  .ai-panel .content { padding: 1rem; white-space: pre-wrap; line-height: 1.6; }
+  .ai-panel .close { background: transparent; border: 0; font-size: 1.2rem; cursor: pointer; }
+</style>
+
+<div id="ai-summary-panel" class="ai-panel" style="display:none;">
+  <header>
+    <span>Rezumat selecție</span>
+    <button class="close" type="button" aria-label="Închide">×</button>
+  </header>
+  <div class="content">Se încarcă…</div>
+</div>
+
+<script>
+(function() {
+  const article = document.querySelector('.material-text');
+  if (!article) return;
+
+  // bubble button near selection
+  const bubble = document.createElement('button');
+  bubble.className = 'ai-bubble';
+  bubble.type = 'button';
+  bubble.textContent = 'Rezumă selecția';
+  document.body.appendChild(bubble);
+
+  const panel = document.getElementById('ai-summary-panel');
+  const panelClose = panel.querySelector('.close');
+  const panelContent = panel.querySelector('.content');
+
+  panelClose.addEventListener('click', () => { panel.style.display = 'none'; });
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  function insideArticle(sel) {
+    const a = sel.anchorNode && article.contains(sel.anchorNode);
+    const f = sel.focusNode && article.contains(sel.focusNode);
+    return a && f;
+  }
+
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !insideArticle(sel)) {
+      bubble.style.display = 'none';
+      return;
+    }
+    // place bubble near selection
+    try {
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const x = rect.right + window.scrollX - 80; // offset
+      const y = rect.top + window.scrollY - 36;
+      bubble.style.left = Math.max(8, x) + 'px';
+      bubble.style.top  = Math.max(8, y) + 'px';
+      bubble.style.display = 'inline-block';
+    } catch(_) {
+      bubble.style.display = 'none';
+    }
+  });
+
+  bubble.addEventListener('click', async () => {
+    const sel = window.getSelection();
+    const text = (sel ? sel.toString() : '').trim();
+
+    if (text.length < 20) {
+      alert('Selectează un fragment puțin mai lung (minim ~20 caractere).');
+      return;
+    }
+    if (text.length > 8000) {
+      alert('Fragmentul e foarte lung. Selectează o porțiune mai mică (≤ 8000 caractere).');
+      return;
+    }
+
+    bubble.disabled = true; bubble.textContent = 'Se rezumă…';
+    panel.style.display = 'block';
+    panelContent.textContent = 'Se încarcă…';
+
+    try {
+      const resp = await fetch("{% url 'api_summarize_selection' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ text, locale: 'ro' })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Eroare la sumarizare.');
+      panelContent.textContent = data.summary;
+    } catch (err) {
+      panelContent.textContent = (err && err.message) ? err.message : 'A apărut o eroare.';
+    } finally {
+      bubble.disabled = false; bubble.textContent = 'Rezumă selecția';
+    }
+  });
+})();
+</script>
+
+</section>
+{% endblock %}
