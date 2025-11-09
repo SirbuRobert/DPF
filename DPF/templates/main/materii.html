@@ -21,7 +21,7 @@
             </a>
           </header>
           <footer>
-            <a class="btn btn--primary" href="{{ m.fisier.url }}" target="_blank">Descarcă</a>
+              <a class="btn btn--primary" href="{% url 'material_text' m.pk %}">Deschide</a>
           </footer>
         </article>
       {% endfor %}

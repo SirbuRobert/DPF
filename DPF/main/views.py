@@ -1,8 +1,10 @@
 # DPF/main/views.py
+import json
 import os
 import tempfile
-
+import re
 from PyPDF2 import PdfReader
+from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -16,6 +18,9 @@ from .models import MaterialDidactic, User, ElevProfile, ProfesorProfile, Lectie
 from django.db.models import Q # Asigură-te că Q este importat
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+
+from openai import OpenAI
+
 
 # Importăm Formularele
 from .forms import (
@@ -189,8 +194,6 @@ def profil_view(request):
     return render(request, 'main/profil.html', context)
 
     
-
-@login_required
 @login_required
 def materii_view(request):
     context = {}
@@ -414,6 +417,116 @@ def lectie_ai_view(request, lectie_id: int):
     })
 
 @login_required # Accesibil doar utilizatorilor logați
+def material_text_view(request, pk):
+    def clean_extracted_text(raw: str) -> str:
+        # 1) normalize newlines/spaces
+        t = raw.replace("\r\n", "\n").replace("\r", "\n")
+        t = t.replace("\u00a0", " ")  # NBSP -> space
+        t = t.replace("\u200b", "")  # zero-width space
+
+        # 2) fix hyphenation at line breaks: "infor-\nmation" -> "information"
+        t = re.sub(r'(?<=\w)[\----‐­]\n(?=\w)', '', t)  # includes soft-hyphen variants
+
+        # 3) protect list items & headings so we don't collapse their line breaks
+        # mark newlines before bullets / numbered items / all-caps headings
+        t = re.sub(r'\n(?=\s*(?:[\-\*\u2022]|[0-9]{1,2}\.)\s+)', '⏎', t)
+
+        # 4) merge single line-breaks inside paragraphs into spaces (keep blank lines)
+        t = re.sub(r'(?<!\n)\n(?!\n)', ' ', t)
+
+        # 5) restore protected newlines
+        t = t.replace('⏎', '\n')
+
+        # 6) collapse multiple spaces/tabs and excessive blank lines
+        t = re.sub(r'[ \t]{2,}', ' ', t)
+        t = re.sub(r'\n{3,}', '\n\n', t)
+
+        # 7) tidy spacing around punctuation
+        t = re.sub(r'\s+([,.;:?!])', r'\1', t)
+        t = re.sub(r'\(\s+', '(', t)
+        t = re.sub(r'\s+\)', ')', t)
+
+        return t.strip()
+    material = get_object_or_404(MaterialDidactic.objects.select_related("lectie", "lectie__materie", "autor"),pk=pk,)
+
+    # Access control similar to your materii_view
+    if request.user.rol == User.Rol.ELEV:
+        try:
+            an_elev = request.user.elev_profile.an_studiu
+        except ElevProfile.DoesNotExist:
+            raise Http404()
+        if material.lectie.an_studiu != an_elev:
+            raise Http404()
+    elif request.user.rol == User.Rol.PROFESOR:
+        if material.autor_id != request.user.id:
+            raise Http404()
+
+    text = _extract_text_from_pdf_path(material.fisier.path)
+    text = clean_extracted_text(text)
+
+    return render(request, "main/material_text.html", {
+        "material": material,
+        "text": text,
+    })
+
+def api_summarize_selection(request):
+    def _shorten(text: str, max_chars: int = 8000) -> str:
+        if len(text) <= max_chars:
+            return text
+        # try to cut at sentence boundary
+        cut = text[:max_chars]
+        last = max(cut.rfind('. '), cut.rfind('! '), cut.rfind('? '))
+        return cut[: last + 1 if last != -1 else max_chars]
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"error": "Payload invalid."}, status=400)
+
+    raw_text = (payload.get("text") or "").strip()
+    locale = (payload.get("locale") or "ro").strip().lower()
+    if not raw_text:
+        return JsonResponse({"error": "Lipsește textul de rezumat."}, status=400)
+
+    # keep request small
+    text = _shorten(raw_text, max_chars=8000)
+
+    # choose the token (API key): prefer per-user stored key, fallback to settings
+    api_key = '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'
+    if not api_key:
+        return JsonResponse({"error": "Cheia OpenAI nu este configurată pe server."}, status=500)
+
+    # --- OpenAI call ---
+    try:
+        # Works with the OpenAI Python SDK v1.x
+        client = OpenAI(api_key=api_key)
+
+        system_msg = (
+            "You are a helpful assistant that writes short, faithful summaries. "
+            "Keep key terms, equations, and definitions; remove fluff. "
+            "Length: ~4-6 concise bullet points or 3-5 sentences. "
+            f"Language: {'Romanian' if locale.startswith('ro') else 'English'}."
+        )
+
+        user_msg = f"Summarize the following selection:\n\n{text}"
+
+        # fast + affordable model; adjust to your account
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ],
+            temperature=0.2,
+            max_tokens=300,
+        )
+        summary = completion.choices[0].message.content.strip()
+
+        return JsonResponse({"summary": summary})
+    except Exception as e:
+        return JsonResponse({"error": f"Eroare la apelul OpenAI: {e}"}, status=500)
+
+
+@login_required
 def profesori_view(request):
     """
     Afișează lista de profesori pentru ELEVI sau lista de elevi pentru PROFESORI.
@@ -440,7 +553,7 @@ def profesori_view(request):
             profesori_relevanti_ids = MaterialDidactic.objects.filter(
                 lectie__an_studiu=an_studiu
             ).values_list('autor_id', flat=True).distinct()
-            
+
             profesori_la_clasa = []
             restul_profesorilor = []
             
@@ -449,7 +562,7 @@ def profesori_view(request):
                     profesori_la_clasa.append(prof_profile)
                 else:
                     restul_profesorilor.append(prof_profile)
-                    
+
         except ElevProfile.DoesNotExist:
             pass
             
@@ -511,7 +624,7 @@ def chat_view(request, destinatar_id):
 
     # Filtrăm mesajele care sunt fie (Expeditor -> Destinatar) SAU (Destinatar -> Expeditor)
     mesaje = Mesaj.objects.filter(
-        Q(expeditor=expeditor, destinatar=destinatar) | 
+        Q(expeditor=expeditor, destinatar=destinatar) |
         Q(expeditor=destinatar, destinatar=expeditor)
     ).order_by('data_trimitere')
 
@@ -526,7 +639,7 @@ def chat_view(request, destinatar_id):
             )
             # Redirecționăm pentru a preveni re-trimiterea mesajului la refresh (POST/REDIRECT/GET)
             return redirect('chat', destinatar_id=destinatar_id)
-        
+
     context = {
         'destinatar': destinatar,
         'mesaje': mesaje,
@@ -544,7 +657,7 @@ def get_messages_ajax_view(request, destinatar_id):
 
     # Aceeași logică de filtrare ca în chat_view
     mesaje = Mesaj.objects.filter(
-        Q(expeditor=expeditor, destinatar=destinatar) | 
+        Q(expeditor=expeditor, destinatar=destinatar) |
         Q(expeditor=destinatar, destinatar=expeditor)
     ).order_by('data_trimitere')
 

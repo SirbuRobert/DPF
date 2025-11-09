@@ -46,8 +46,19 @@ def load_model_components():
     
     # --- Încărcare Modele de Rezumare ---
     try:
-        tok_summ = AutoTokenizer.from_pretrained(SUMM_MODEL_PATH)
-        model_summ = AutoModelForSeq2SeqLM.from_pretrained(SUMM_MODEL_PATH).to(device)
+        MODEL_NAME = "google-t5/t5-large"  # or your fine-tuned checkpoint path
+
+        tok_summ = AutoTokenizer.from_pretrained(
+            MODEL_NAME,
+            use_fast=True,
+            model_max_length=1024,  # = MAX_INPUT_LEN from your config
+            padding_side="right",
+            truncation_side="right",
+        )
+        model_summ = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(device)
+
+        #tok_summ = AutoTokenizer.from_pretrained(SUMM_MODEL_PATH)
+        #model_summ = AutoModelForSeq2SeqLM.from_pretrained(SUMM_MODEL_PATH).to(device)
         model_summ.eval()
         models['summarize'] = True
     except Exception as e:
