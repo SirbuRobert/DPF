@@ -301,7 +301,7 @@ def quiz_view(request):
         student.cod_quiz = cod_final
         student.save()
 
-        return render(request, 'main/rezultat.html', {'cod': cod_final})
+        return render(request, 'main/quiz.html', {'cod': cod_final, 'quiz': quiz})
 
     return render(request, 'main/quiz.html', {'quiz': quiz})
 
