@@ -58,7 +58,7 @@ def home_view(request):
         try:
             if request.user.rol == User.Rol.ELEV:
                 an_elev = request.user.elev_profile.an_studiu
-                materiale = MaterialDidactic.objects.filter(an_studiu=an_elev).order_by('-data_adaugarii')[:5]
+                materiale = MaterialDidactic.objects.filter(lectie__an_studiu=an_elev).order_by('-data_adaugarii')[:5]
                 context['materiale_recente'] = materiale
                 
             elif request.user.rol == User.Rol.PROFESOR:
